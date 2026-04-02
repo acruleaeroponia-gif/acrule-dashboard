@@ -465,6 +465,16 @@ const ENVIOS_PCT       = 0.17;
 const IMPUESTOS_PCT    = 0.04;
 
 const COSTOS_MODELO = {
+  // ── Modelos actuales (planilla real) ──
+  'Mini Huerta Acrule 6 plantas - Gris':  30787,
+  'Mini Huerta Acrule 6 plantas - Beige': 30787,
+  'Mini Huerta Acrule 6 plantas':         30787,
+  'Huerta Acrule - 32':                  172053,
+  'Huerta Acrule - 24':                  149441,
+  'Huerta Acrule - 12':                  126829,
+  'Nutrientes Acrule - Hidroponia A+B+C':     0,
+  'Nutrientes Acrule':                        0,
+  // ── Nombres anteriores (compatibilidad) ──
   'Mini Huerta Nacional': 30787,
   'Mini Huerta China':    81337,
   'Huerta 12P':          126829,
@@ -581,6 +591,7 @@ function inRange(dateStr, from, to) {
 function parseDate(str) {
   if (!str) return null;
   str = String(str).trim();
+  // DD/MM/YYYY
   if (str.includes('/')) {
     const parts = str.split('/');
     if (parts.length === 3) {
@@ -588,6 +599,30 @@ function parseDate(str) {
       return `${y.padStart(4,'20')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
     }
   }
+  // DD-MMM o D-MMM en español (ej: "30-mar", "1-abr", "2-abr")
+  const ES_MONTHS = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+  const mAbr = str.match(/^(\d{1,2})[- ]([a-záéíóú]{3,})/i);
+  if (mAbr) {
+    const day = mAbr[1].padStart(2,'0');
+    const monKey = mAbr[2].toLowerCase().substring(0,3);
+    const monNum = ES_MONTHS[monKey];
+    if (monNum) {
+      const yr = new Date().getFullYear();
+      return `${yr}-${String(monNum).padStart(2,'0')}-${day}`;
+    }
+  }
+  // MMM-DD o MMM DD en inglés/español
+  const mMmm = str.match(/^([a-záéíóú]{3,})[- ](\d{1,2})/i);
+  if (mMmm) {
+    const monKey = mMmm[1].toLowerCase().substring(0,3);
+    const monNum = ES_MONTHS[monKey];
+    if (monNum) {
+      const day = mMmm[2].padStart(2,'0');
+      const yr = new Date().getFullYear();
+      return `${yr}-${String(monNum).padStart(2,'0')}-${day}`;
+    }
+  }
+  // YYYY-MM-DD o cualquier otro formato ISO → pasa directo
   return str;
 }
 
@@ -614,12 +649,14 @@ function getCostoModelo(modelo) {
 function parseVentas(rows) {
   if (!rows || rows.length < 2) return [];
   const [header, ...data] = rows;
-  const col = name => { const i = header.findIndex(h => String(h).toLowerCase().trim().includes(name)); return i >= 0 ? i : null; };
-  const iFecha   = col('fecha')   ?? 0;
-  const iHora    = col('hora');
-  const iModelo  = col('modelo')  ?? 2;
-  const iPrecio  = col('precio')  ?? 3;
-  const iComision= col('comision')?? 4;
+  const col = name => { const i = header.findIndex(h => String(h).toLowerCase().trim().includes(name.toLowerCase())); return i >= 0 ? i : null; };
+  const iFecha    = col('fecha')   ?? 0;
+  const iHora     = col('hora');
+  const iModelo   = col('modelo')  ?? 2;
+  // "LO QUE COBRO" → buscar 'cobro' primero; fallback a 'precio cobrado', 'precio', índice 3
+  const iPrecio   = col('cobro') ?? col('cobrado') ?? col('precio') ?? 3;
+  // Comisiones: buscar 'comisi' para capturar "Comisiones", "Comisión", etc.
+  const iComision = col('comisi') ?? col('comision') ?? 4;
   return data
     .filter(r => r[iFecha] && r[iPrecio])
     .map(r => ({
@@ -634,16 +671,18 @@ function parseVentas(rows) {
 function parseEgresos(rows) {
   if (!rows || rows.length < 2) return [];
   const [header, ...data] = rows;
-  const col = name => { const i = header.findIndex(h => String(h).toLowerCase().trim().includes(name)); return i >= 0 ? i : null; };
-  const iFecha    = col('fecha')   ?? 0;
-  const iCategoria= col('categor') ?? 1;
-  const iMonto    = col('monto')   ?? 2;
+  const col = name => { const i = header.findIndex(h => String(h).toLowerCase().trim().includes(name.toLowerCase())); return i >= 0 ? i : null; };
+  const iFecha     = col('fecha')   ?? 0;
+  // "Categoria" en la planilla real
+  const iCategoria = col('categor') ?? col('categoria') ?? col('tipo') ?? 1;
+  // La columna de monto puede llamarse "Monto", "Importe", "Total", "Valor", "Precio", o incluso "Egreso/Ingreso"
+  const iMonto     = col('monto') ?? col('importe') ?? col('total') ?? col('valor') ?? col('egreso') ?? col('ingreso') ?? col('precio') ?? 2;
   return data
-    .filter(r => r[iFecha] && r[iMonto])
+    .filter(r => r[iFecha] && r[iMonto] && parseNum(r[iMonto]) !== 0)
     .map(r => ({
       fecha:     parseDate(String(r[iFecha]||'')),
       categoria: String(r[iCategoria]||'').trim(),
-      monto:     parseNum(r[iMonto]),
+      monto:     Math.abs(parseNum(r[iMonto])), // abs por si hay negativos
     }));
 }
 
@@ -712,19 +751,22 @@ function calcPeriod() {
   }
 
   // Egresos por categoría
+  // "Anuncios (Meta, Google)", "Anuncios", "ads", "publicidad", "marketing"
+  const esAnuncio = c => c.includes('anunci') || c === 'ads' || c.includes('publicidad') || c.includes('marketing') || c.includes('meta') || c.includes('google ads');
   const totalAnuncios = egresosP
-    .filter(e => { const c=e.categoria.toLowerCase(); return c.includes('anunci')||c==='ads'||c.includes('publicidad'); })
+    .filter(e => esAnuncio(e.categoria.toLowerCase()))
     .reduce((s,e)=>s+e.monto, 0);
 
+  const esSueldo = c => c.includes('sueldo') || c.includes('salario') || c.includes('personal');
   const sueldosRow = egresosP
-    .filter(e => e.categoria.toLowerCase().includes('sueldo'))
+    .filter(e => esSueldo(e.categoria.toLowerCase()))
     .reduce((s,e)=>s+e.monto, 0);
   const totalSueldos = sueldosRow > 0 ? sueldosRow : (config.sueldosMensuales / 30 * days);
 
   const totalOtros = egresosP
     .filter(e => {
       const c=e.categoria.toLowerCase();
-      return !c.includes('anunci') && c!=='ads' && !c.includes('publicidad') && !c.includes('sueldo');
+      return !esAnuncio(c) && !esSueldo(c);
     })
     .reduce((s,e)=>s+e.monto, 0);
 
