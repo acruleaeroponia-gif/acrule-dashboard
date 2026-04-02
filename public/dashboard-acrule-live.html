@@ -238,6 +238,31 @@
   .tag-green { background:rgba(34,197,94,.15);  color:var(--green); }
   .tag-blue  { background:rgba(59,130,246,.15); color:#93c5fd; }
 
+  /* ── MODEL COST EDITOR ── */
+  .model-editor-panel {
+    background:var(--surface); border:1px solid var(--blue); border-top:none;
+    border-radius:0 0 14px 14px; padding:18px 20px 22px; margin-bottom:18px; display:none;
+  }
+  .model-editor-panel.open { display:block; }
+  .model-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; margin-bottom:14px; }
+  .model-row {
+    background:var(--surface2); border:1px solid var(--border); border-radius:11px;
+    padding:11px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    transition:border-color .15s;
+  }
+  .model-row:focus-within { border-color:var(--blue); }
+  .model-row.unknown { border-color:rgba(234,179,8,.5); background:rgba(234,179,8,.04); }
+  .model-name { font-size:.78rem; font-weight:600; flex:1; min-width:0; }
+  .model-name-unknown { color:var(--yellow); font-size:.72rem; margin-top:2px; }
+  .model-cost-input {
+    width:100px; background:var(--surface); border:1px solid var(--border);
+    color:var(--text); border-radius:7px; padding:4px 8px; font-size:.82rem;
+    font-weight:700; text-align:right;
+  }
+  .model-cost-input:focus { outline:none; border-color:var(--blue); }
+  .model-peso { color:var(--muted); font-size:.8rem; }
+  .model-info { display:flex; flex-direction:column; flex:1; min-width:0; overflow:hidden; }
+
   /* ── LOADING ── */
   #loadingOverlay {
     position:fixed; inset:0; background:rgba(15,23,42,.85); display:none;
@@ -401,6 +426,26 @@
       </div>
     </div>
 
+    <!-- MODEL COST EDITOR -->
+    <div class="config-toggle-bar" id="modelToggleBar" onclick="toggleModelEditor()" style="margin-top:10px">
+      <div class="config-toggle-left">
+        <span style="font-size:1.15rem">🌱</span>
+        <div>
+          <div class="config-toggle-label">Costos por modelo</div>
+          <div class="config-toggle-sub" id="modelSubtitle">Editá el costo de inversión de cada modelo vendido</div>
+        </div>
+      </div>
+      <span class="config-toggle-arrow" id="modelArrow">▼</span>
+    </div>
+    <div class="model-editor-panel" id="modelPanel">
+      <div class="config-intro">
+        Acá se lista cada modelo que aparece en la hoja de Ventas. Editá el costo de producción/inversión de cada uno.
+        Esos costos se usan para calcular el <strong>Costo inversores</strong> y el margen por venta.
+        Los cambios se guardan automáticamente.
+      </div>
+      <div class="model-grid" id="modelGrid"></div>
+    </div>
+
     <!-- EGRESO CARDS -->
     <div class="section-hdr" style="margin-top:18px">
       <div>
@@ -461,11 +506,9 @@
 const CLIENT_ID        = '444981171857-dcpdntfn4nsn3noeh1d3m7qjpmjjvfve.apps.googleusercontent.com';
 const SPREADSHEET_ID   = '1nKABP2ZvKKlFDdvUCvQ8jhgmbu-l1tErBz_w4ZZFGnM';
 const REFRESH_MS       = 5 * 60 * 1000;
-const ENVIOS_PCT       = 0.17;
-const IMPUESTOS_PCT    = 0.04;
 
-const COSTOS_MODELO = {
-  // ── Modelos actuales (planilla real) ──
+// Costos base por modelo (editables desde la UI, se guardan en localStorage)
+const DEFAULT_COSTOS_MODELO = {
   'Mini Huerta Acrule 6 plantas - Gris':  30787,
   'Mini Huerta Acrule 6 plantas - Beige': 30787,
   'Mini Huerta Acrule 6 plantas':         30787,
@@ -474,7 +517,6 @@ const COSTOS_MODELO = {
   'Huerta Acrule - 12':                  126829,
   'Nutrientes Acrule - Hidroponia A+B+C':     0,
   'Nutrientes Acrule':                        0,
-  // ── Nombres anteriores (compatibilidad) ──
   'Mini Huerta Nacional': 30787,
   'Mini Huerta China':    81337,
   'Huerta 12P':          126829,
@@ -485,6 +527,18 @@ const COSTOS_MODELO = {
   'Upsell':               22612,
   'Insumos':                  0,
 };
+
+function loadCostos() {
+  try {
+    const raw = localStorage.getItem('acrule_costos');
+    const saved = raw ? JSON.parse(raw) : {};
+    return { ...DEFAULT_COSTOS_MODELO, ...saved };
+  } catch { return { ...DEFAULT_COSTOS_MODELO }; }
+}
+function saveCostos() {
+  localStorage.setItem('acrule_costos', JSON.stringify(COSTOS_MODELO));
+}
+let COSTOS_MODELO = loadCostos();
 
 const BUDGET_CATS = [
   { id:'inversores',  icon:'🌿', label:'Costo inversores (mat. prima)', color:'#a855f7' },
@@ -730,47 +784,47 @@ function calcPeriod() {
   const ventasP  = allVentas.filter(v => inRange(v.fecha, from, to));
   const egresosP = allEgresos.filter(e => inRange(e.fecha, from, to));
 
-  let cobrado=0, totalInversores=0, totalComisiones=0, totalEnvios=0, totalImpuestos=0;
+  let cobrado=0, totalInversores=0, totalComisiones=0;
   const filasVentas = [];
   const modelosDesc = [];
 
   for (const v of ventasP) {
-    const costoRaw   = getCostoModelo(v.modelo);
-    const costoInv   = costoRaw ?? 0;
+    const costoRaw  = getCostoModelo(v.modelo);
+    const costoInv  = costoRaw ?? 0;
     if (costoRaw===null) modelosDesc.push(v.modelo);
-    const envios    = v.precio * ENVIOS_PCT;
-    const impuestos = v.precio * IMPUESTOS_PCT;
-    const quedaLibre= v.precio - costoInv - v.comision - envios - impuestos;
+    // Margen bruto por venta = cobrado - costo modelo - comisión
+    const margenBruto = v.precio - costoInv - v.comision;
 
-    cobrado          += v.precio;
-    totalInversores  += costoInv;
-    totalComisiones  += v.comision;
-    totalEnvios      += envios;
-    totalImpuestos   += impuestos;
-    filasVentas.push({ ...v, costoInversor:costoInv, quedaLibre, envios, impuestos });
+    cobrado         += v.precio;
+    totalInversores += costoInv;
+    totalComisiones += v.comision;
+    filasVentas.push({ ...v, costoInversor:costoInv, quedaLibre:margenBruto });
   }
 
-  // Egresos por categoría
-  // "Anuncios (Meta, Google)", "Anuncios", "ads", "publicidad", "marketing"
-  const esAnuncio = c => c.includes('anunci') || c === 'ads' || c.includes('publicidad') || c.includes('marketing') || c.includes('meta') || c.includes('google ads');
-  const totalAnuncios = egresosP
-    .filter(e => esAnuncio(e.categoria.toLowerCase()))
-    .reduce((s,e)=>s+e.monto, 0);
+  // ── Filtros de categoría en Egresos ────────────────────────────────────────
+  const esAnuncio   = c => c.includes('anunci') || c === 'ads' || c.includes('publicidad') || c.includes('marketing') || c.includes('meta') || c.includes('google ads');
+  const esSueldo    = c => c.includes('sueldo') || c.includes('salario');
+  const esLogistica = c => c.includes('logísti') || c.includes('logisti') || c.includes('envío') || c.includes('envio') || c.includes('flete') || c.includes('correo') || c.includes('despacho');
+  const esImpuesto  = c => c.includes('impuesto') || c.includes('tax') || c.includes('fiscal') || c.includes('afip') || c.includes('iibb') || c.includes('ingresos brutos');
 
-  const esSueldo = c => c.includes('sueldo') || c.includes('salario') || c.includes('personal');
-  const sueldosRow = egresosP
-    .filter(e => esSueldo(e.categoria.toLowerCase()))
-    .reduce((s,e)=>s+e.monto, 0);
+  const totalAnuncios  = egresosP.filter(e => esAnuncio(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
+  const totalEnvios    = egresosP.filter(e => esLogistica(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
+  const totalImpuestos = egresosP.filter(e => esImpuesto(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
+
+  const sueldosRow  = egresosP.filter(e => esSueldo(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
+  // Fallback a sueldo mensual prorrateado si no hay datos en Egresos
   const totalSueldos = sueldosRow > 0 ? sueldosRow : (config.sueldosMensuales / 30 * days);
 
+  // "Otros gastos" = todo lo que no cae en las categorías anteriores
   const totalOtros = egresosP
     .filter(e => {
-      const c=e.categoria.toLowerCase();
-      return !esAnuncio(c) && !esSueldo(c);
+      const c = e.categoria.toLowerCase();
+      return !esAnuncio(c) && !esSueldo(c) && !esLogistica(c) && !esImpuesto(c);
     })
     .reduce((s,e)=>s+e.monto, 0);
 
   // Métricas derivadas
+  // "Queda libre" = cobrado - costos modelo - comisiones - envíos - impuestos
   const quedaLibreTotal = cobrado - totalInversores - totalComisiones - totalEnvios - totalImpuestos;
   const burnFijos       = totalSueldos + totalOtros;
   const ebitda          = quedaLibreTotal - burnFijos - totalAnuncios;
@@ -778,13 +832,13 @@ function calcPeriod() {
   // Budget categories con varianza
   const base = cobrado;
   const categorias = [
-    { id:'inversores',  icon:'🌿', nombre:'Costo inversores', sub:'Costo materia prima',  monto:totalInversores,  color:'#a855f7' },
-    { id:'comisiones',  icon:'🏪', nombre:'Comisiones',       sub:'MercadoLibre / WEB',   monto:totalComisiones,  color:'#22c55e' },
-    { id:'envios',      icon:'📦', nombre:'Envíos',           sub:'17% por venta',        monto:totalEnvios,      color:'#3b82f6' },
-    { id:'impuestos',   icon:'📋', nombre:'Impuestos',        sub:'4% sobre ventas',      monto:totalImpuestos,   color:'#14b8a6' },
-    { id:'anuncios',    icon:'📣', nombre:'Anuncios',         sub:'Meta + Google Ads',    monto:totalAnuncios,    color:'#f97316' },
-    { id:'sueldos',     icon:'👷', nombre:'Sueldos',          sub:'Personal',             monto:totalSueldos,     color:'#8b5cf6' },
-    { id:'otrosGastos', icon:'🔧', nombre:'Otros gastos',     sub:'Egresos varios',       monto:totalOtros,       color:'#eab308' },
+    { id:'inversores',  icon:'🌿', nombre:'Costo inversores', sub:'Costo de modelos vendidos', monto:totalInversores,  color:'#a855f7' },
+    { id:'comisiones',  icon:'🏪', nombre:'Comisiones',       sub:'MercadoLibre / WEB',         monto:totalComisiones,  color:'#22c55e' },
+    { id:'envios',      icon:'📦', nombre:'Envíos',           sub:'Logística y envío',          monto:totalEnvios,      color:'#3b82f6' },
+    { id:'impuestos',   icon:'📋', nombre:'Impuestos',        sub:'AFIP / IIBB / Fiscal',       monto:totalImpuestos,   color:'#14b8a6' },
+    { id:'anuncios',    icon:'📣', nombre:'Anuncios',         sub:'Meta + Google Ads',          monto:totalAnuncios,    color:'#f97316' },
+    { id:'sueldos',     icon:'👷', nombre:'Sueldos',          sub:'Personal',                   monto:totalSueldos,     color:'#8b5cf6' },
+    { id:'otrosGastos', icon:'🔧', nombre:'Otros gastos',     sub:'Materia prima + varios',     monto:totalOtros,       color:'#eab308' },
   ].map(cat => {
     const realPct   = base > 0 ? (cat.monto / base * 100) : 0;
     const budgetPct = config.budgetPct[cat.id] || 0;
@@ -857,6 +911,15 @@ function renderDashboard() {
 
   updateConfigSubtitle(categorias);
   if (document.getElementById('configPanel').classList.contains('open')) renderConfigGrid();
+  if (document.getElementById('modelPanel').classList.contains('open')) renderModelGrid();
+  // Actualizar subtitle del model editor si hay modelos nuevos
+  const desconocidos = [...new Set(allVentas.map(v=>v.modelo).filter(m => m && !(m in COSTOS_MODELO)))];
+  const mSub = document.getElementById('modelSubtitle');
+  if (mSub && !modelEditorOpen) {
+    mSub.textContent = desconocidos.length > 0
+      ? `⚠ ${desconocidos.length} modelo${desconocidos.length>1?'s':''} sin costo — hacé clic para configurar`
+      : 'Costos de modelos configurados ✅';
+  }
 }
 
 function _setCard(id, value, sub, subClass) {
@@ -1068,6 +1131,70 @@ function toggleConfig() {
   document.getElementById('configToggleBar').classList.toggle('open', configOpen);
   document.getElementById('configArrow').textContent = configOpen ? '▲' : '▼';
   if (configOpen) renderConfigGrid();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODEL COST EDITOR
+═══════════════════════════════════════════════════════════════ */
+let modelEditorOpen = false;
+function toggleModelEditor() {
+  modelEditorOpen = !modelEditorOpen;
+  document.getElementById('modelPanel').classList.toggle('open', modelEditorOpen);
+  document.getElementById('modelToggleBar').classList.toggle('open', modelEditorOpen);
+  document.getElementById('modelArrow').textContent = modelEditorOpen ? '▲' : '▼';
+  if (modelEditorOpen) renderModelGrid();
+}
+
+function getModelosEnUso() {
+  // Todos los modelos únicos encontrados en la planilla de ventas
+  const fromData = [...new Set(allVentas.map(v => v.modelo).filter(Boolean))];
+  // Más los modelos base del config
+  const fromDefaults = Object.keys(DEFAULT_COSTOS_MODELO).filter(k => DEFAULT_COSTOS_MODELO[k] > 0);
+  const all = [...new Set([...fromData, ...fromDefaults])].sort();
+  return all;
+}
+
+function renderModelGrid() {
+  const grid = document.getElementById('modelGrid');
+  if (!grid) return;
+  const modelos = getModelosEnUso();
+  const fromData = new Set(allVentas.map(v => v.modelo).filter(Boolean));
+
+  grid.innerHTML = modelos.map(nombre => {
+    const costo = COSTOS_MODELO[nombre] ?? 0;
+    const isNew = fromData.has(nombre) && !(nombre in DEFAULT_COSTOS_MODELO);
+    const inData = fromData.has(nombre);
+    return `
+      <div class="model-row ${isNew ? 'unknown' : ''}">
+        <div class="model-info">
+          <div class="model-name">${nombre}</div>
+          ${isNew ? '<div class="model-name-unknown">⚠ Nuevo modelo — asigná un costo</div>' : ''}
+          ${inData && !isNew ? '<div style="font-size:.68rem;color:var(--green);margin-top:1px">✓ En ventas</div>' : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="model-peso">$</span>
+          <input class="model-cost-input" type="number" min="0" step="100"
+            value="${costo}"
+            onchange="onModelCost(${JSON.stringify(nombre)}, this.value)"
+          />
+        </div>
+      </div>`;
+  }).join('');
+
+  // Subtitle
+  const newCount = modelos.filter(m => fromData.has(m) && !(m in DEFAULT_COSTOS_MODELO)).length;
+  const sub = document.getElementById('modelSubtitle');
+  if (sub) sub.textContent = newCount > 0
+    ? `⚠ ${newCount} modelo${newCount>1?'s':''} nuevo${newCount>1?'s':''} sin costo asignado`
+    : `${modelos.length} modelos configurados`;
+}
+
+function onModelCost(nombre, val) {
+  const n = parseFloat(val) || 0;
+  COSTOS_MODELO[nombre] = n;
+  saveCostos();
+  renderDashboard(); // recalculate
+  renderModelGrid(); // refresh grid
 }
 
 /* ═══════════════════════════════════════════════════════════════
