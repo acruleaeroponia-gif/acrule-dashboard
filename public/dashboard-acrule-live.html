@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Acrule 🌱</title>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0f172a; --surface: #1e293b; --surface2: #273348;
+    --border:  #334155; --text:    #f1f5f9; --muted:    #94a3b8;
+    --green:   #22c55e; --red:     #ef4444; --yellow:   #eab308;
+    --blue:    #3b82f6; --purple:  #a855f7; --orange:   #f97316; --teal: #14b8a6;
+  }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; min-height:100vh; }
+
+  /* ── LOGIN ── */
+  #loginScreen {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px; flex-direction:column; gap:28px;
+  }
+  .login-logo { font-size:3.5rem; text-align:center; }
+  .login-title { font-size:1.8rem; font-weight:800; text-align:center; }
+  .login-sub-title { color:var(--muted); font-size:.9rem; text-align:center; }
+  .login-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:28px 32px; width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px;
+  }
+  .login-desc { color:var(--muted); font-size:.84rem; text-align:center; line-height:1.5; }
+  .btn-google {
+    width:100%; background:#fff; color:#1f1f1f; border:none; border-radius:12px;
+    padding:12px 20px; font-size:.9rem; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    transition:background .15s; box-shadow:0 1px 3px rgba(0,0,0,.2);
+  }
+  .btn-google:hover { background:#f1f1f1; }
+  .btn-google:disabled { opacity:.5; cursor:not-allowed; }
+  .login-error { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:#fca5a5; border-radius:10px; padding:10px 14px; font-size:.82rem; }
+
+  /* ── DASHBOARD ── */
+  .page { max-width:1100px; margin:0 auto; padding:20px 16px 40px; }
+  .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .header-title { font-size:1.35rem; font-weight:800; }
+  .header-sub { font-size:.74rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .header-actions { display:flex; gap:8px; align-items:center; }
+  .btn {
+    padding:7px 15px; border-radius:9px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:.82rem;
+    font-weight:600; cursor:pointer; transition:all .15s; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover { border-color:var(--blue); color:var(--blue); }
+  .btn-sm { padding:5px 11px; font-size:.78rem; }
+
+  /* ── DATE BAR ── */
+  .date-bar {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:10px 14px; display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:18px;
+  }
+  .date-bar label { font-size:.75rem; color:var(--muted); font-weight:600; white-space:nowrap; }
+  .quick-btns { display:flex; gap:5px; flex-wrap:wrap; }
+  .qbtn {
+    padding:5px 13px; border-radius:8px; border:1px solid var(--border); background:transparent;
+    color:var(--muted); font-size:.78rem; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .qbtn:hover { color:var(--text); border-color:var(--blue); }
+  .qbtn.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .sep { color:var(--border); margin:0 3px; }
+  .range-inputs { display:flex; align-items:center; gap:6px; }
+  .range-inputs input[type=date] {
+    background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:5px 10px; font-size:.78rem; cursor:pointer;
+  }
+  .range-inputs input[type=date]:focus { outline:none; border-color:var(--blue); }
+  .range-lbl { color:var(--muted); font-size:.78rem; }
+  .date-display {
+    margin-left:auto; font-size:.78rem; color:var(--muted);
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:5px 12px; white-space:nowrap;
+  }
+  .date-display strong { color:var(--text); }
+
+  /* ── ALERTS ── */
+  .alerts { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+  .alert { border-radius:12px; padding:10px 15px; display:flex; align-items:center; gap:10px; font-size:.84rem; font-weight:500; border:1px solid; }
+  .alert-red    { background:rgba(239,68,68,.1);  border-color:rgba(239,68,68,.4);  color:#fca5a5; }
+  .alert-yellow { background:rgba(234,179,8,.1);  border-color:rgba(234,179,8,.4);  color:#fde047; }
+  .alert-green  { background:rgba(34,197,94,.1);  border-color:rgba(34,197,94,.4);  color:#86efac; }
+  .alert-icon   { font-size:1.1rem; flex-shrink:0; }
+  .alert-pill   { margin-left:auto; padding:3px 10px; border-radius:8px; font-size:.75rem; font-weight:700; white-space:nowrap; background:rgba(255,255,255,.07); }
+  .error-banner { background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.4); color:#fde047; border-radius:12px; padding:10px 16px; font-size:.84rem; margin-bottom:14px; }
+
+  /* ── SECTION HEADER ── */
+  .section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; margin-top:22px; }
+  .section-title { font-size:.9rem; font-weight:700; }
+  .section-sub   { font-size:.74rem; color:var(--muted); }
+  .badge { font-size:.72rem; font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid; }
+  .badge-red   { background:rgba(239,68,68,.15);  border-color:rgba(239,68,68,.4);  color:#fca5a5; }
+  .badge-green { background:rgba(34,197,94,.15);  border-color:rgba(34,197,94,.4);  color:#86efac; }
+  .badge-blue  { background:rgba(59,130,246,.15); border-color:rgba(59,130,246,.4); color:#93c5fd; }
+
+  /* ── METRICS GRID ── */
+  .metrics-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:11px; margin-bottom:18px; }
+  .metric-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:15px 17px; position:relative; overflow:hidden;
+  }
+  .metric-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:var(--accent-color,var(--blue)); border-radius:16px 16px 0 0;
+  }
+  .metric-label { font-size:.71rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+  .metric-value { font-size:1.4rem; font-weight:700; letter-spacing:-.01em; margin-bottom:4px; }
+  .metric-sub   { font-size:.73rem; color:var(--muted); }
+  .metric-sub.positive { color:var(--green); }
+  .metric-sub.negative { color:var(--red); }
+  .text-green { color:var(--green); } .text-red { color:var(--red); }
+  .text-yellow { color:var(--yellow); } .text-blue { color:#93c5fd; } .text-white { color:var(--text); }
+
+  /* ── CONFIG PANEL ── */
+  .config-toggle-bar {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:12px 18px; margin-bottom:0; display:flex; align-items:center;
+    justify-content:space-between; cursor:pointer; transition:border-color .2s; user-select:none;
+  }
+  .config-toggle-bar:hover { border-color:var(--blue); }
+  .config-toggle-bar.open { border-radius:14px 14px 0 0; border-color:var(--blue); border-bottom:none; }
+  .config-toggle-left { display:flex; align-items:center; gap:10px; }
+  .config-toggle-label { font-size:.87rem; font-weight:700; }
+  .config-toggle-sub { font-size:.74rem; color:var(--muted); margin-top:1px; }
+  .config-toggle-arrow { font-size:.85rem; color:var(--muted); transition:transform .25s; }
+  .config-toggle-bar.open .config-toggle-arrow { transform:rotate(180deg); }
+  .config-panel {
+    background:var(--surface); border:1px solid var(--blue); border-top:none;
+    border-radius:0 0 14px 14px; padding:18px 20px 22px; margin-bottom:18px; display:none;
+  }
+  .config-panel.open { display:block; }
+  .config-intro {
+    font-size:.79rem; color:var(--muted); margin-bottom:16px;
+    padding:9px 13px; background:rgba(59,130,246,.08);
+    border-radius:8px; border-left:3px solid var(--blue); line-height:1.5;
+  }
+  .config-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; margin-bottom:16px; }
+  .config-row {
+    background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+    padding:13px 15px; transition:border-color .15s;
+  }
+  .config-row:focus-within { border-color:var(--blue); }
+  .config-row-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+  .config-cat-name { font-size:.83rem; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .config-pct-display { font-size:1.05rem; font-weight:800; min-width:50px; text-align:right; }
+  .config-slider-row { display:flex; align-items:center; gap:9px; }
+  .config-slider {
+    flex:1; -webkit-appearance:none; appearance:none; height:5px;
+    border-radius:4px; background:var(--border); outline:none; cursor:pointer;
+  }
+  .config-slider::-webkit-slider-thumb {
+    -webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+    background:var(--blue); cursor:pointer; border:2px solid var(--surface);
+    box-shadow:0 0 0 2px rgba(59,130,246,.3);
+  }
+  .config-input {
+    width:58px; background:var(--surface); border:1px solid var(--border);
+    color:var(--text); border-radius:7px; padding:4px 6px;
+    font-size:.82rem; font-weight:700; text-align:center;
+  }
+  .config-input:focus { outline:none; border-color:var(--blue); }
+  .config-footer {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding-top:12px; border-top:1px solid var(--border); flex-wrap:wrap;
+  }
+  .config-total-line { font-size:.82rem; color:var(--muted); display:flex; align-items:center; gap:7px; }
+  .config-total-pct { font-weight:800; font-size:.94rem; }
+
+  /* ── EGRESO CARDS ── */
+  .egreso-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:11px; margin-bottom:18px; }
+  .egreso-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 15px; }
+  .egreso-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .egreso-icon { font-size:1.2rem; }
+  .egreso-name { font-size:.8rem; font-weight:600; }
+  .egreso-subtitle { font-size:.68rem; color:var(--muted); }
+  .egreso-value { font-size:1.2rem; font-weight:700; margin-bottom:10px; }
+  .progress-wrap { margin-bottom:8px; }
+  .progress-bar-bg { background:var(--surface2); border-radius:4px; height:6px; overflow:hidden; margin-bottom:4px; }
+  .progress-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
+  .progress-labels { display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); }
+  .varianza-row { display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(51,65,85,.5); }
+  .varianza-label { font-size:.72rem; color:var(--muted); }
+  .varianza-pill { font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:8px; white-space:nowrap; }
+  .varianza-favor   { background:rgba(34,197,94,.15);   color:var(--green); }
+  .varianza-exceso  { background:rgba(239,68,68,.15);   color:var(--red); }
+  .varianza-neutro  { background:rgba(148,163,184,.15); color:var(--muted); }
+  .varianza-warning { background:rgba(234,179,8,.15);   color:var(--yellow); }
+  .card-over { border-color:rgba(239,68,68,.5); background:rgba(239,68,68,.04); }
+  .card-warn { border-color:rgba(234,179,8,.4);  background:rgba(234,179,8,.03); }
+  .card-over .egreso-value { color:var(--red); }
+  .card-warn .egreso-value { color:var(--yellow); }
+  .card-ok   .egreso-value { color:var(--green); }
+
+  /* ── BUDGET TABLE ── */
+  .budget-summary { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:18px; }
+  .budget-table-hdr {
+    padding:11px 18px; border-bottom:1px solid var(--border);
+    font-size:.71rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;
+    display:grid; grid-template-columns:150px 1fr 80px 70px 70px 85px; gap:8px; align-items:center;
+  }
+  .budget-data-row {
+    padding:9px 18px; border-bottom:1px solid rgba(51,65,85,.35);
+    display:grid; grid-template-columns:150px 1fr 80px 70px 70px 85px; gap:8px; align-items:center;
+    transition:background .1s;
+  }
+  .budget-data-row:last-child { border-bottom:none; }
+  .budget-data-row:hover { background:rgba(255,255,255,.02); }
+  .budget-data-row.total-row { background:rgba(59,130,246,.06); border-top:1px solid var(--border); font-weight:700; border-bottom:none; }
+  .bt-cat  { font-size:.81rem; display:flex; align-items:center; gap:6px; }
+  .bt-bar-bg   { background:var(--surface2); border-radius:3px; height:6px; overflow:hidden; }
+  .bt-bar-fill { height:100%; border-radius:3px; }
+  .bt-num  { font-size:.78rem; text-align:right; color:var(--muted); }
+  .bt-pct  { font-size:.78rem; text-align:right; font-weight:600; }
+  .bt-var  { font-size:.78rem; font-weight:700; padding:3px 8px; border-radius:6px; text-align:center; }
+  .bt-var.favor  { background:rgba(34,197,94,.12);  color:var(--green); }
+  .bt-var.exceso { background:rgba(239,68,68,.12);  color:var(--red); }
+  .bt-var.warn   { background:rgba(234,179,8,.12);  color:var(--yellow); }
+
+  /* ── SALES TABLE ── */
+  .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:18px; }
+  .table-hdr  { padding:13px 17px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .table-title { font-size:.84rem; font-weight:700; }
+  table { width:100%; border-collapse:collapse; }
+  th { padding:9px 15px; text-align:left; font-size:.71rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; background:var(--surface2); border-bottom:1px solid var(--border); }
+  td { padding:9px 15px; font-size:.81rem; border-bottom:1px solid rgba(51,65,85,.5); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:6px; font-size:.69rem; font-weight:600; }
+  .tag-green { background:rgba(34,197,94,.15);  color:var(--green); }
+  .tag-blue  { background:rgba(59,130,246,.15); color:#93c5fd; }
+
+  /* ── LOADING ── */
+  #loadingOverlay {
+    position:fixed; inset:0; background:rgba(15,23,42,.85); display:none;
+    align-items:center; justify-content:center; flex-direction:column; gap:12px; z-index:100;
+  }
+  .spinner { font-size:2.5rem; animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ── FOOTER ── */
+  .footer { text-align:center; font-size:.71rem; color:var(--border); margin-top:28px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width:700px) {
+    .metrics-grid { grid-template-columns:1fr 1fr; }
+    .egreso-grid  { grid-template-columns:1fr 1fr; }
+    .date-display { display:none; }
+    .budget-table-hdr, .budget-data-row { grid-template-columns:110px 1fr 60px 55px 55px 65px; font-size:.72rem; }
+    th, td { padding:7px 10px; }
+  }
+  @media (max-width:480px) {
+    .budget-table-hdr { display:none; }
+    .budget-data-row { grid-template-columns:1fr 55px 55px 65px; }
+    .budget-data-row > :nth-child(2), .budget-data-row > :nth-child(3) { display:none; }
+    .config-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ LOGIN ═══════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-logo">🌱</div>
+  <div>
+    <div class="login-title">Dashboard Acrule</div>
+    <div class="login-sub-title" style="margin-top:6px">Dashboard financiero en tiempo real</div>
+  </div>
+  <div class="login-card">
+    <p class="login-desc">Iniciá sesión con tu cuenta de Google para ver los datos de tu planilla en tiempo real.</p>
+    <button class="btn-google" id="btnLogin" onclick="login()" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Continuar con Google
+    </button>
+    <div class="login-error" id="loginError" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ LOADING ═══════════════════════════════════════ -->
+<div id="loadingOverlay">
+  <div class="spinner">🌀</div>
+  <p style="color:var(--muted);font-size:.88rem">Cargando datos de la planilla…</p>
+</div>
+
+<!-- ═══════════════════════════════════════ DASHBOARD ═══════════════════════════════════════ -->
+<div id="dashboardScreen" style="display:none">
+  <div class="page">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div>
+        <div class="header-title">🌱 Dashboard Acrule</div>
+        <div class="header-sub">
+          <span class="dot"></span>
+          <span id="lastUpdatedTime">Cargando…</span>
+          · Auto-refresh cada 5 min
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-sm" onclick="fetchAll(false)">🔄 Actualizar</button>
+      </div>
+    </div>
+
+    <!-- DATE BAR -->
+    <div class="date-bar">
+      <label>📅 Período:</label>
+      <div class="quick-btns">
+        <button class="qbtn" onclick="selectPeriodo(this,'hoy')">Hoy</button>
+        <button class="qbtn active" onclick="selectPeriodo(this,'semana')">Esta semana</button>
+        <button class="qbtn" onclick="selectPeriodo(this,'mes')">Este mes</button>
+        <button class="qbtn" onclick="selectPeriodo(this,'mes-hoy')">Mes hasta hoy</button>
+      </div>
+      <span class="sep">|</span>
+      <div class="range-inputs">
+        <span class="range-lbl">Desde</span>
+        <input type="date" id="dateFrom" onchange="onRangeChange()" />
+        <span class="range-lbl">hasta</span>
+        <input type="date" id="dateTo"   onchange="onRangeChange()" />
+      </div>
+      <div class="date-display" id="dateDisplay">Mostrando: <strong>Esta semana</strong></div>
+    </div>
+
+    <!-- ERROR BANNER -->
+    <div class="error-banner" id="errorBanner" style="display:none"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts" id="alertsSection"></div>
+
+    <!-- METRICS -->
+    <div class="section-hdr">
+      <div>
+        <div class="section-title">Resumen del período</div>
+        <div class="section-sub" id="periodSubtitle">—</div>
+      </div>
+      <span class="badge" id="ebitdaBadge">—</span>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card" style="--accent-color:#3b82f6" id="metCobrado">
+        <div class="metric-label">💰 Cobrado</div>
+        <div class="metric-value text-white">$0</div>
+        <div class="metric-sub">0 ventas</div>
+      </div>
+      <div class="metric-card" style="--accent-color:#a855f7" id="metInversores">
+        <div class="metric-label">🌿 Pago inversores</div>
+        <div class="metric-value text-white">$0</div>
+        <div class="metric-sub">0% del cobrado</div>
+      </div>
+      <div class="metric-card" style="--accent-color:#22c55e" id="metQueda">
+        <div class="metric-label">📊 Queda libre</div>
+        <div class="metric-value text-green">$0</div>
+        <div class="metric-sub">Margen bruto 0%</div>
+      </div>
+      <div class="metric-card" style="--accent-color:#f97316" id="metAds">
+        <div class="metric-label">📣 Ads gastados</div>
+        <div class="metric-value text-white">$0</div>
+        <div class="metric-sub positive">—</div>
+      </div>
+      <div class="metric-card" style="--accent-color:#14b8a6" id="metEbitda">
+        <div class="metric-label">🏆 EBITDA del período</div>
+        <div class="metric-value text-green">$0</div>
+        <div class="metric-sub positive">—</div>
+      </div>
+    </div>
+
+    <!-- CONFIG PANEL TOGGLE -->
+    <div class="config-toggle-bar" id="configToggleBar" onclick="toggleConfig()">
+      <div class="config-toggle-left">
+        <span style="font-size:1.15rem">🎯</span>
+        <div>
+          <div class="config-toggle-label">Límites de presupuesto por porcentaje</div>
+          <div class="config-toggle-sub" id="configSubtitle">Configurá el % máximo de cada categoría sobre lo cobrado</div>
+        </div>
+      </div>
+      <span class="config-toggle-arrow" id="configArrow">▼</span>
+    </div>
+    <div class="config-panel" id="configPanel">
+      <div class="config-intro">
+        Definí cuánto puede representar cada gasto como % de lo cobrado en el período.
+        El sistema compara el % real vs tu límite y muestra la varianza — verde si estás a favor, rojo si te pasaste.
+      </div>
+      <div class="config-grid" id="configGrid"></div>
+      <div class="config-footer">
+        <div class="config-total-line">
+          Total presupuestado: <span class="config-total-pct" id="configTotalPct">—</span>
+          <span id="configTotalNote" style="font-size:.75rem"></span>
+        </div>
+        <div style="font-size:.74rem;color:var(--muted)">Los cambios se guardan automáticamente ↑</div>
+      </div>
+    </div>
+
+    <!-- EGRESO CARDS -->
+    <div class="section-hdr" style="margin-top:18px">
+      <div>
+        <div class="section-title">Desglose de egresos</div>
+        <div class="section-sub">% real vs % presupuestado sobre lo cobrado</div>
+      </div>
+      <span class="badge badge-green" id="egresosBadge">—</span>
+    </div>
+    <div class="egreso-grid" id="egresoGrid"></div>
+
+    <!-- BUDGET TABLE -->
+    <div class="section-hdr">
+      <div class="section-title">Vista consolidada · % real vs presupuesto</div>
+    </div>
+    <div class="budget-summary">
+      <div class="budget-table-hdr">
+        <div>Categoría</div>
+        <div>Ejecución</div>
+        <div style="text-align:right">Monto</div>
+        <div style="text-align:right">Real %</div>
+        <div style="text-align:right">Ppto %</div>
+        <div style="text-align:center">Varianza</div>
+      </div>
+      <div id="budgetTableBody"></div>
+    </div>
+
+    <!-- SALES TABLE -->
+    <div class="section-hdr">
+      <div class="section-title">Ventas del período</div>
+      <span class="badge badge-blue" id="ventasBadge">0 ventas</span>
+    </div>
+    <div class="table-wrap">
+      <div class="table-hdr">
+        <div class="table-title">Detalle de ventas</div>
+        <div style="font-size:.74rem;color:var(--muted)">Últimas 25 registradas</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Modelo</th><th>Cobrado</th>
+            <th>Costo inv.</th><th>Comisión</th><th>Queda libre</th><th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="ventasTbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">Acrule Hidropónica 2026 · Dashboard en tiempo real · Datos desde Google Sheets</div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONSTANTES
+═══════════════════════════════════════════════════════════════ */
+const CLIENT_ID        = '444981171857-dcpdntfn4nsn3noeh1d3m7qjpmjjvfve.apps.googleusercontent.com';
+const SPREADSHEET_ID   = '1nKABP2ZvKKlFDdvUCvQ8jhgmbu-l1tErBz_w4ZZFGnM';
+const REFRESH_MS       = 5 * 60 * 1000;
+const ENVIOS_PCT       = 0.17;
+const IMPUESTOS_PCT    = 0.04;
+
+const COSTOS_MODELO = {
+  'Mini Huerta Nacional': 30787,
+  'Mini Huerta China':    81337,
+  'Huerta 12P':          126829,
+  'Huerta 24P':          149441,
+  'Huerta 32P':          172053,
+  'Huerta Led 28P':      240686,
+  'Torre 1.0':           247342,
+  'Upsell':               22612,
+  'Insumos':                  0,
+};
+
+const BUDGET_CATS = [
+  { id:'inversores',  icon:'🌿', label:'Costo inversores (mat. prima)', color:'#a855f7' },
+  { id:'comisiones',  icon:'🏪', label:'Comisiones ML/WEB',             color:'#22c55e' },
+  { id:'envios',      icon:'📦', label:'Envíos',                         color:'#3b82f6' },
+  { id:'impuestos',   icon:'📋', label:'Impuestos',                      color:'#14b8a6' },
+  { id:'anuncios',    icon:'📣', label:'Anuncios (Meta + Google)',        color:'#f97316' },
+  { id:'sueldos',     icon:'👷', label:'Sueldos',                         color:'#8b5cf6' },
+  { id:'otrosGastos', icon:'🔧', label:'Otros gastos',                   color:'#eab308' },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN (localStorage)
+═══════════════════════════════════════════════════════════════ */
+const DEFAULT_CONFIG = {
+  budgetPct: {
+    inversores:   45,
+    comisiones:   16,
+    envios:       17,
+    impuestos:     4,
+    anuncios:      8.8,
+    sueldos:       6.8,
+    otrosGastos:   2.4,
+  },
+  sueldosMensuales: 6500000,
+};
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem('acrule_config');
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    const saved = JSON.parse(raw);
+    return {
+      ...DEFAULT_CONFIG,
+      ...saved,
+      budgetPct: { ...DEFAULT_CONFIG.budgetPct, ...(saved.budgetPct || {}) },
+    };
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_CONFIG)); }
+}
+function saveConfig(cfg) {
+  localStorage.setItem('acrule_config', JSON.stringify(cfg));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+let tokenClient  = null;
+let accessToken  = null;
+let allVentas    = [];
+let allEgresos   = [];
+let config       = loadConfig();
+let refreshTimer = null;
+let lastUpdated  = null;
+let currentPeriodo = 'semana';
+let dateFrom = null;
+let dateTo   = null;
+
+/* ═══════════════════════════════════════════════════════════════
+   DATE HELPERS
+═══════════════════════════════════════════════════════════════ */
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function getPeriodRange(periodo) {
+  const t = new Date();
+  const todayStr = toDateStr(t);
+
+  if (periodo === 'hoy') {
+    return { from:todayStr, to:todayStr, label:`Hoy ${t.getDate()}/${t.getMonth()+1}`, days:1 };
+  }
+  if (periodo === 'semana') {
+    const dow = t.getDay() === 0 ? 6 : t.getDay() - 1;
+    const mon = new Date(t); mon.setDate(t.getDate() - dow);
+    return { from:toDateStr(mon), to:todayStr, label:'Esta semana', days:dow+1 };
+  }
+  if (periodo === 'mes') {
+    const first = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-01`;
+    const last  = new Date(t.getFullYear(), t.getMonth()+1, 0);
+    return { from:first, to:toDateStr(last), label:`${MESES[t.getMonth()]} ${t.getFullYear()}`, days:last.getDate() };
+  }
+  if (periodo === 'mes-hoy') {
+    const first = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-01`;
+    return { from:first, to:todayStr, label:`${MESES[t.getMonth()]} hasta hoy`, days:t.getDate() };
+  }
+  if (periodo === 'custom' && dateFrom && dateTo) {
+    const d1 = new Date(dateFrom+'T00:00:00'), d2 = new Date(dateTo+'T00:00:00');
+    const days = Math.round((d2-d1)/86400000)+1;
+    return { from:dateFrom, to:dateTo, label:'Rango personalizado', days };
+  }
+  return { from:todayStr, to:todayStr, label:'Hoy', days:1 };
+}
+
+function inRange(dateStr, from, to) {
+  if (!dateStr) return false;
+  return dateStr >= from && dateStr <= to;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PARSERS
+═══════════════════════════════════════════════════════════════ */
+function parseDate(str) {
+  if (!str) return null;
+  str = String(str).trim();
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+      const [d,m,y] = parts;
+      return `${y.padStart(4,'20')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+  }
+  return str;
+}
+
+function parseNum(str) {
+  if (!str) return 0;
+  const s = String(str).replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'.').trim();
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function getCostoModelo(modelo) {
+  if (!modelo) return 0;
+  const m = modelo.trim().toLowerCase();
+  for (const [k,v] of Object.entries(COSTOS_MODELO)) {
+    if (k.toLowerCase() === m) return v;
+  }
+  for (const [k,v] of Object.entries(COSTOS_MODELO)) {
+    if (m.includes(k.toLowerCase()) || k.toLowerCase().includes(m)) return v;
+  }
+  if (m.includes('insumo') || m.includes('extra')) return 0;
+  return null; // unknown
+}
+
+function parseVentas(rows) {
+  if (!rows || rows.length < 2) return [];
+  const [header, ...data] = rows;
+  const col = name => { const i = header.findIndex(h => String(h).toLowerCase().trim().includes(name)); return i >= 0 ? i : null; };
+  const iFecha   = col('fecha')   ?? 0;
+  const iHora    = col('hora');
+  const iModelo  = col('modelo')  ?? 2;
+  const iPrecio  = col('precio')  ?? 3;
+  const iComision= col('comision')?? 4;
+  return data
+    .filter(r => r[iFecha] && r[iPrecio])
+    .map(r => ({
+      fecha:    parseDate(String(r[iFecha]||'')),
+      hora:     iHora!=null ? String(r[iHora]||'') : '',
+      modelo:   String(r[iModelo]||'').trim(),
+      precio:   parseNum(r[iPrecio]),
+      comision: parseNum(iComision!=null ? r[iComision] : 0),
+    }));
+}
+
+function parseEgresos(rows) {
+  if (!rows || rows.length < 2) return [];
+  const [header, ...data] = rows;
+  const col = name => { const i = header.findIndex(h => String(h).toLowerCase().trim().includes(name)); return i >= 0 ? i : null; };
+  const iFecha    = col('fecha')   ?? 0;
+  const iCategoria= col('categor') ?? 1;
+  const iMonto    = col('monto')   ?? 2;
+  return data
+    .filter(r => r[iFecha] && r[iMonto])
+    .map(r => ({
+      fecha:     parseDate(String(r[iFecha]||'')),
+      categoria: String(r[iCategoria]||'').trim(),
+      monto:     parseNum(r[iMonto]),
+    }));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FETCH SHEETS
+═══════════════════════════════════════════════════════════════ */
+async function fetchSheet(sheetName) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url, { headers:{ Authorization:`Bearer ${accessToken}` } });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || `Error ${res.status} al leer "${sheetName}"`);
+  }
+  const data = await res.json();
+  return data.values || [];
+}
+
+async function fetchAll(silent=false) {
+  if (!accessToken) return;
+  if (!silent) showLoading(true);
+  showError(null);
+  try {
+    const [vRows, eRows] = await Promise.all([ fetchSheet('Ventas'), fetchSheet('Egresos') ]);
+    allVentas  = parseVentas(vRows);
+    allEgresos = parseEgresos(eRows);
+    lastUpdated = new Date();
+    const hm = `${String(lastUpdated.getHours()).padStart(2,'0')}:${String(lastUpdated.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('lastUpdatedTime').textContent = `Actualizado ${hm} hs`;
+    showLoading(false);
+    renderDashboard();
+  } catch(err) {
+    showLoading(false);
+    showError(err.message);
+    if (allVentas.length > 0) renderDashboard(); // render with cached data
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CALCULATIONS
+═══════════════════════════════════════════════════════════════ */
+function calcPeriod() {
+  const range = getPeriodRange(currentPeriodo);
+  const { from, to, days } = range;
+
+  const ventasP  = allVentas.filter(v => inRange(v.fecha, from, to));
+  const egresosP = allEgresos.filter(e => inRange(e.fecha, from, to));
+
+  let cobrado=0, totalInversores=0, totalComisiones=0, totalEnvios=0, totalImpuestos=0;
+  const filasVentas = [];
+  const modelosDesc = [];
+
+  for (const v of ventasP) {
+    const costoRaw   = getCostoModelo(v.modelo);
+    const costoInv   = costoRaw ?? 0;
+    if (costoRaw===null) modelosDesc.push(v.modelo);
+    const envios    = v.precio * ENVIOS_PCT;
+    const impuestos = v.precio * IMPUESTOS_PCT;
+    const quedaLibre= v.precio - costoInv - v.comision - envios - impuestos;
+
+    cobrado          += v.precio;
+    totalInversores  += costoInv;
+    totalComisiones  += v.comision;
+    totalEnvios      += envios;
+    totalImpuestos   += impuestos;
+    filasVentas.push({ ...v, costoInversor:costoInv, quedaLibre, envios, impuestos });
+  }
+
+  // Egresos por categoría
+  const totalAnuncios = egresosP
+    .filter(e => { const c=e.categoria.toLowerCase(); return c.includes('anunci')||c==='ads'||c.includes('publicidad'); })
+    .reduce((s,e)=>s+e.monto, 0);
+
+  const sueldosRow = egresosP
+    .filter(e => e.categoria.toLowerCase().includes('sueldo'))
+    .reduce((s,e)=>s+e.monto, 0);
+  const totalSueldos = sueldosRow > 0 ? sueldosRow : (config.sueldosMensuales / 30 * days);
+
+  const totalOtros = egresosP
+    .filter(e => {
+      const c=e.categoria.toLowerCase();
+      return !c.includes('anunci') && c!=='ads' && !c.includes('publicidad') && !c.includes('sueldo');
+    })
+    .reduce((s,e)=>s+e.monto, 0);
+
+  // Métricas derivadas
+  const quedaLibreTotal = cobrado - totalInversores - totalComisiones - totalEnvios - totalImpuestos;
+  const burnFijos       = totalSueldos + totalOtros;
+  const ebitda          = quedaLibreTotal - burnFijos - totalAnuncios;
+
+  // Budget categories con varianza
+  const base = cobrado;
+  const categorias = [
+    { id:'inversores',  icon:'🌿', nombre:'Costo inversores', sub:'Costo materia prima',  monto:totalInversores,  color:'#a855f7' },
+    { id:'comisiones',  icon:'🏪', nombre:'Comisiones',       sub:'MercadoLibre / WEB',   monto:totalComisiones,  color:'#22c55e' },
+    { id:'envios',      icon:'📦', nombre:'Envíos',           sub:'17% por venta',        monto:totalEnvios,      color:'#3b82f6' },
+    { id:'impuestos',   icon:'📋', nombre:'Impuestos',        sub:'4% sobre ventas',      monto:totalImpuestos,   color:'#14b8a6' },
+    { id:'anuncios',    icon:'📣', nombre:'Anuncios',         sub:'Meta + Google Ads',    monto:totalAnuncios,    color:'#f97316' },
+    { id:'sueldos',     icon:'👷', nombre:'Sueldos',          sub:'Personal',             monto:totalSueldos,     color:'#8b5cf6' },
+    { id:'otrosGastos', icon:'🔧', nombre:'Otros gastos',     sub:'Egresos varios',       monto:totalOtros,       color:'#eab308' },
+  ].map(cat => {
+    const realPct   = base > 0 ? (cat.monto / base * 100) : 0;
+    const budgetPct = config.budgetPct[cat.id] || 0;
+    const varianza  = budgetPct - realPct;
+    return { ...cat, realPct, budgetPct, varianza };
+  });
+
+  return { range, cobrado, totalInversores, totalAnuncios, ebitda, quedaLibreTotal,
+           burnFijos, categorias, filasVentas, cantidadVentas:ventasP.length,
+           modelosDesc:[...new Set(modelosDesc)] };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORMAT
+═══════════════════════════════════════════════════════════════ */
+function fmt(n) {
+  if (!n||isNaN(n)) return '$0';
+  return '$'+Math.round(Math.abs(n)).toLocaleString('es-AR');
+}
+function fmtSigned(n) {
+  if (!n||isNaN(n)) return '$0';
+  const s = '$'+Math.round(Math.abs(n)).toLocaleString('es-AR');
+  return n<0 ? `-${s}` : s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════════ */
+function renderDashboard() {
+  const data = calcPeriod();
+  const { range, cobrado, totalInversores, ebitda, categorias, filasVentas, cantidadVentas } = data;
+  const com = categorias.find(c=>c.id==='comisiones')?.monto||0;
+  const env = categorias.find(c=>c.id==='envios')?.monto||0;
+  const imp = categorias.find(c=>c.id==='impuestos')?.monto||0;
+  const quedaLibre = cobrado - totalInversores - com - env - imp;
+
+  // Subtitle + badge
+  document.getElementById('periodSubtitle').textContent = `${range.label} · ${range.days} día${range.days!==1?'s':''}`;
+  const eb = document.getElementById('ebitdaBadge');
+  eb.textContent = ebitda >= 0 ? '✅ EBITDA positivo' : '❌ EBITDA negativo';
+  eb.className   = `badge ${ebitda >= 0 ? 'badge-green' : 'badge-red'}`;
+
+  // Metrics
+  _setCard('metCobrado', fmt(cobrado), `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
+  _setCard('metInversores', fmt(totalInversores), `${cobrado>0?(totalInversores/cobrado*100).toFixed(1):0}% del cobrado`);
+  const quedaClass = quedaLibre>=0?'positive':'negative';
+  _setCard('metQueda', fmtSigned(quedaLibre), `Margen bruto ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
+  _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? '⚠ Sobre presupuesto':'Dentro del presupuesto',
+           data.totalAnuncios > cobrado*0.088 ? 'negative':'');
+
+  const ebitdaCard = document.getElementById('metEbitda');
+  if (ebitdaCard) {
+    ebitdaCard.querySelector('.metric-value').textContent  = fmtSigned(ebitda);
+    ebitdaCard.querySelector('.metric-value').className   = `metric-value ${ebitda>=0?'text-green':'text-red'}`;
+    const sub = ebitdaCard.querySelector('.metric-sub');
+    sub.textContent = `${ebitda>=0?'✅':'❌'} ${ebitda>=0?'Positivo':'Negativo'} · ${cobrado>0?(ebitda/cobrado*100).toFixed(1):0}% del cobrado`;
+    sub.className   = `metric-sub ${ebitda>=0?'positive':'negative'}`;
+  }
+
+  renderAlertas(categorias);
+  renderEgresoCards(categorias);
+  renderBudgetTable(categorias, cobrado);
+  renderTablaVentas(filasVentas, cantidadVentas);
+
+  // Egreso badge
+  const over = categorias.filter(c=>c.varianza<-0.1&&c.budgetPct>0).length;
+  const eb2 = document.getElementById('egresosBadge');
+  eb2.textContent = over>0 ? `${over} sobre el límite` : '✅ Todos dentro del límite';
+  eb2.className   = `badge ${over>0?'badge-red':'badge-green'}`;
+
+  updateConfigSubtitle(categorias);
+  if (document.getElementById('configPanel').classList.contains('open')) renderConfigGrid();
+}
+
+function _setCard(id, value, sub, subClass) {
+  const el = document.getElementById(id); if(!el) return;
+  el.querySelector('.metric-value').textContent = value;
+  const s = el.querySelector('.metric-sub');
+  if (s) { s.textContent = sub; s.className = `metric-sub ${subClass||''}`; }
+}
+
+function renderAlertas(categorias) {
+  const section = document.getElementById('alertsSection'); if(!section) return;
+  const alerts = [];
+  for (const cat of categorias) {
+    if (!cat.budgetPct) continue;
+    if (cat.varianza < -0.1) {
+      alerts.push({ type:'red', icon:'🚨', title:`${cat.nombre} sobre el límite`,
+        body:`Ejecutado ${cat.realPct.toFixed(1)}% — límite ${cat.budgetPct}%`,
+        pill:`-${Math.abs(cat.varianza).toFixed(1)}%` });
+    } else if (cat.varianza <= 2) {
+      alerts.push({ type:'yellow', icon:'⚠️', title:`${cat.nombre} cerca del límite`,
+        body:`Quedan ${cat.varianza.toFixed(1)}pp libres del ${cat.budgetPct}% presupuestado`,
+        pill:`${cat.varianza.toFixed(1)}% libre` });
+    }
+  }
+  if (!alerts.length) {
+    alerts.push({ type:'green', icon:'✅', title:'Todos los egresos dentro del presupuesto',
+      body:'Cada categoría está por debajo de su límite configurado.', pill:'OK' });
+  }
+  section.innerHTML = alerts.map(a=>`
+    <div class="alert alert-${a.type}">
+      <span class="alert-icon">${a.icon}</span>
+      <div><strong>${a.title}</strong> — ${a.body}</div>
+      <div class="alert-pill">${a.pill}</div>
+    </div>`).join('');
+}
+
+function renderEgresoCards(categorias) {
+  const grid = document.getElementById('egresoGrid'); if(!grid) return;
+  grid.innerHTML = categorias.map(cat => {
+    const ratio   = cat.budgetPct>0 ? Math.min(cat.realPct/cat.budgetPct,1.05) : 0;
+    const barW    = Math.min(ratio*100,100).toFixed(1);
+    const isOver  = cat.varianza < -0.1 && cat.budgetPct > 0;
+    const isWarn  = cat.varianza <= 2 && cat.varianza >= 0 && cat.budgetPct > 0;
+    const cardCls = isOver ? 'card-over' : isWarn ? 'card-warn' : 'card-ok';
+    const barClr  = isOver ? '#ef4444' : isWarn ? '#eab308' : cat.color;
+    const varCls  = isOver ? 'varianza-exceso' : isWarn ? 'varianza-warning' : 'varianza-favor';
+    const varLbl  = cat.varianza>=0.1 ? `+${cat.varianza.toFixed(1)}% ✅ a favor`
+                  : cat.varianza<=-0.1 ? `${cat.varianza.toFixed(1)}% 🚨 exceso`
+                  : '≈ en límite';
+    const subtitle= isOver ? '⚠ Sobre límite' : isWarn ? '⚠ Cerca del límite' : cat.sub;
+    return `
+      <div class="egreso-card ${cardCls}">
+        <div class="egreso-header">
+          <span class="egreso-icon">${cat.icon}</span>
+          <div>
+            <div class="egreso-name">${cat.nombre}</div>
+            <div class="egreso-subtitle">${subtitle}</div>
+          </div>
+        </div>
+        <div class="egreso-value">${fmt(cat.monto)}</div>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:${barW}%;background:${barClr}"></div>
+          </div>
+          <div class="progress-labels">
+            <span>Límite: ${cat.budgetPct}% (${fmt(allVentas.length&&cat.budgetPct?0:0)})</span>
+            <span style="color:${barClr}">${cat.realPct.toFixed(1)}%</span>
+          </div>
+        </div>
+        <div class="varianza-row">
+          <span class="varianza-label">Varianza vs límite:</span>
+          <span class="varianza-pill ${varCls}">${varLbl}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderBudgetTable(categorias, cobrado) {
+  const body = document.getElementById('budgetTableBody'); if(!body) return;
+  let totalMonto=0;
+  const rows = categorias.map(cat => {
+    const ratio   = cat.budgetPct>0 ? Math.min(cat.realPct/cat.budgetPct*100,100) : 0;
+    const isOver  = cat.varianza < -0.1;
+    const isWarn  = cat.varianza <= 2 && cat.varianza >= 0;
+    const varCls  = isOver ? 'exceso' : isWarn ? 'warn' : 'favor';
+    const barClr  = isOver ? '#ef4444' : isWarn ? '#eab308' : '#22c55e';
+    totalMonto += cat.monto;
+    return `
+      <div class="budget-data-row">
+        <div class="bt-cat">${cat.icon} ${cat.nombre}</div>
+        <div><div class="bt-bar-bg"><div class="bt-bar-fill" style="width:${ratio.toFixed(0)}%;background:${barClr}"></div></div></div>
+        <div class="bt-num">${fmt(cat.monto)}</div>
+        <div class="bt-pct" style="color:${barClr}">${cat.realPct.toFixed(1)}%</div>
+        <div class="bt-pct" style="color:var(--muted)">${cat.budgetPct}%</div>
+        <div class="bt-var ${varCls}">${cat.varianza>=0?'+':''}${cat.varianza.toFixed(1)}%</div>
+      </div>`;
+  }).join('');
+
+  const totalRealPct = cobrado>0 ? (totalMonto/cobrado*100) : 0;
+  const totalBudPct  = categorias.reduce((s,c)=>s+c.budgetPct,0);
+  const totalVar     = totalBudPct - totalRealPct;
+  const tvCls        = totalVar>=0 ? 'favor' : 'exceso';
+
+  body.innerHTML = rows + `
+    <div class="budget-data-row total-row">
+      <div class="bt-cat">📊 Total egresos</div>
+      <div><div class="bt-bar-bg"><div class="bt-bar-fill" style="width:${totalBudPct>0?Math.min(totalRealPct/totalBudPct*100,100).toFixed(0):0}%;background:#3b82f6"></div></div></div>
+      <div class="bt-num" style="color:var(--text);font-weight:700">${fmt(totalMonto)}</div>
+      <div class="bt-pct" style="color:#93c5fd;font-weight:700">${totalRealPct.toFixed(1)}%</div>
+      <div class="bt-pct" style="color:var(--muted);font-weight:700">${totalBudPct.toFixed(1)}%</div>
+      <div class="bt-var ${tvCls}" style="font-weight:800">${totalVar>=0?'+':''}${totalVar.toFixed(1)}%</div>
+    </div>`;
+}
+
+function renderTablaVentas(filasVentas, cantidadVentas) {
+  const badge = document.getElementById('ventasBadge');
+  if (badge) badge.textContent = `${cantidadVentas} venta${cantidadVentas!==1?'s':''}`;
+  const tbody = document.getElementById('ventasTbody'); if(!tbody) return;
+  const rows = filasVentas.slice(-25).reverse();
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No hay ventas registradas en este período.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(v => {
+    const parts = (v.fecha||'').split('-');
+    const fechaFmt = parts.length===3 ? `${parts[2]}/${parts[1]}` : v.fecha||'—';
+    const costoNull = getCostoModelo(v.modelo)===null;
+    const tag = costoNull
+      ? `<span class="tag tag-blue">? Costo pendiente</span>`
+      : `<span class="tag tag-green">✓ OK</span>`;
+    return `
+      <tr>
+        <td style="color:var(--muted)">${fechaFmt}</td>
+        <td>${v.modelo||'—'}</td>
+        <td style="font-weight:600">${fmt(v.precio)}</td>
+        <td style="color:var(--muted)">${fmt(v.costoInversor)}</td>
+        <td style="color:var(--muted)">${fmt(v.comision)}</td>
+        <td class="${v.quedaLibre>=0?'text-green':'text-red'}" style="font-weight:700">${fmtSigned(v.quedaLibre)}</td>
+        <td>${tag}</td>
+      </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG PANEL
+═══════════════════════════════════════════════════════════════ */
+function renderConfigGrid() {
+  const grid = document.getElementById('configGrid'); if(!grid) return;
+  const data = calcPeriod();
+  grid.innerHTML = BUDGET_CATS.map(cat => {
+    const budgetPct = config.budgetPct[cat.id]||0;
+    const realCat   = data.categorias.find(c=>c.id===cat.id);
+    const realPct   = realCat ? realCat.realPct : 0;
+    const varPct    = budgetPct - realPct;
+    const varColor  = varPct>0.1 ? '#22c55e' : varPct<-0.5 ? '#ef4444' : '#eab308';
+    return `
+      <div class="config-row">
+        <div class="config-row-header">
+          <div class="config-cat-name">${cat.icon} ${cat.label}</div>
+          <div class="config-pct-display" style="color:${varColor}">${budgetPct}%</div>
+        </div>
+        <div class="config-slider-row">
+          <input class="config-slider" type="range" min="0" max="70" step="0.1" value="${budgetPct}"
+            oninput="onCfgSlider('${cat.id}',this.value)" />
+          <input class="config-input" type="number" min="0" max="70" step="0.1" value="${budgetPct}"
+            id="cfg_${cat.id}" oninput="onCfgInput('${cat.id}',this.value)" />
+          <span style="font-size:.79rem;color:var(--muted)">%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.71rem;margin-top:5px">
+          <span style="color:var(--muted)">Real: <strong style="color:${varColor}">${realPct.toFixed(1)}%</strong></span>
+          <span style="color:${varColor};font-weight:700">${varPct>=0?'+':''}${varPct.toFixed(1)}% ${varPct>=0.1?'✅':varPct<=-0.1?'🚨':'≈'}</span>
+        </div>
+      </div>`;
+  }).join('');
+  updateConfigTotal();
+}
+
+function onCfgSlider(id, val) {
+  config.budgetPct[id] = parseFloat(val)||0;
+  const inp = document.getElementById(`cfg_${id}`); if(inp) inp.value = val;
+  saveConfig(config); renderDashboard();
+}
+function onCfgInput(id, val) {
+  config.budgetPct[id] = parseFloat(val)||0;
+  saveConfig(config); renderDashboard();
+}
+
+function updateConfigTotal() {
+  const total = Object.values(config.budgetPct).reduce((a,b)=>a+b,0);
+  const el   = document.getElementById('configTotalPct');
+  const note = document.getElementById('configTotalNote');
+  if (el)   { el.textContent = total.toFixed(1)+'%'; el.style.color = total>100?'#ef4444':total>90?'#eab308':'#22c55e'; }
+  if (note) { note.textContent = total>100 ? '⚠ Supera el 100%' : `· Margen libre: ${(100-total).toFixed(1)}%`; note.style.color = total>100?'#fca5a5':'var(--muted)'; }
+}
+
+function updateConfigSubtitle(categorias) {
+  const sub = document.getElementById('configSubtitle');
+  if (!sub || document.getElementById('configPanel').classList.contains('open')) return;
+  const over = categorias.filter(c=>c.varianza<-0.1&&c.budgetPct>0).length;
+  sub.textContent = over>0
+    ? `⚠ ${over} categoría${over>1?'s':''} sobre el límite — hacé clic para ajustar`
+    : '✅ Todos los egresos dentro del presupuesto';
+}
+
+let configOpen = false;
+function toggleConfig() {
+  configOpen = !configOpen;
+  document.getElementById('configPanel').classList.toggle('open', configOpen);
+  document.getElementById('configToggleBar').classList.toggle('open', configOpen);
+  document.getElementById('configArrow').textContent = configOpen ? '▲' : '▼';
+  if (configOpen) renderConfigGrid();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERIOD SELECTOR
+═══════════════════════════════════════════════════════════════ */
+function selectPeriodo(btn, periodo) {
+  currentPeriodo = periodo;
+  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const range = getPeriodRange(periodo);
+  document.getElementById('dateDisplay').innerHTML = `Mostrando: <strong>${range.label}</strong> · ${range.days} día${range.days!==1?'s':''}`;
+  if (allVentas.length||allEgresos.length) renderDashboard();
+}
+
+function onRangeChange() {
+  dateFrom = document.getElementById('dateFrom').value;
+  dateTo   = document.getElementById('dateTo').value;
+  currentPeriodo = 'custom';
+  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));
+  if (dateFrom && dateTo) {
+    const d1 = new Date(dateFrom+'T00:00:00'), d2 = new Date(dateTo+'T00:00:00');
+    const days = Math.round((d2-d1)/86400000)+1;
+    document.getElementById('dateDisplay').innerHTML = `Rango personalizado · <strong>${days} días</strong>`;
+  }
+  if (allVentas.length||allEgresos.length) renderDashboard();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════════════════════ */
+function showLoading(show) {
+  document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+}
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  if (!el) return;
+  if (msg) { el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
+  else      { el.style.display = 'none'; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════════════════════ */
+function initAuth() {
+  if (!window.google?.accounts?.oauth2) { setTimeout(initAuth, 300); return; }
+  tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    callback: (resp) => {
+      if (resp.error) {
+        const errEl = document.getElementById('loginError');
+        errEl.textContent = 'Error de acceso: ' + resp.error;
+        errEl.style.display = 'block';
+        document.getElementById('btnLogin').disabled = false;
+        return;
+      }
+      accessToken = resp.access_token;
+      document.getElementById('loginScreen').style.display   = 'none';
+      document.getElementById('dashboardScreen').style.display = 'block';
+      fetchAll(false);
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(()=>fetchAll(true), REFRESH_MS);
+    },
+  });
+  document.getElementById('btnLogin').disabled = false;
+}
+
+function login() {
+  if (!tokenClient) { alert('Google Auth cargando, esperá un momento…'); return; }
+  document.getElementById('btnLogin').disabled = true;
+  document.getElementById('loginError').style.display = 'none';
+  tokenClient.requestAccessToken();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  // Set default date range inputs (esta semana)
+  const t   = new Date();
+  const dow = t.getDay() === 0 ? 6 : t.getDay() - 1;
+  const mon = new Date(t); mon.setDate(t.getDate() - dow);
+  document.getElementById('dateFrom').value = toDateStr(mon);
+  document.getElementById('dateTo').value   = toDateStr(t);
+  initAuth();
+});
+</script>
+</body>
+</html>
