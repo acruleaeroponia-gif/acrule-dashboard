@@ -1,12 +1,27 @@
 // Configuración inicial por defecto — adaptada a los modelos reales de ACRULE
 
 export const DEFAULT_CONFIG = {
-  // Porcentajes fijos
+  // Porcentajes fijos (usados en el cálculo por venta)
   enviosPct: 0.17,      // 17% envíos
   impuestosPct: 0.04,   // 4%  impuestos
 
   // Sueldos mensuales fijos
   sueldosMensuales: 6500000,
+
+  /**
+   * Límites de presupuesto expresados como % sobre lo cobrado.
+   * El usuario los puede editar desde el panel de configuración.
+   * La suma total es 100% — cada peso cobrado tiene destino.
+   */
+  budgetPct: {
+    inversores:  45,   // Costo materia prima / pago a inversores
+    envios:      17,   // Envíos (calculado por venta)
+    comisiones:  16,   // Comisiones MercadoLibre / Web
+    sueldos:      6.8, // Sueldos y jornales
+    anuncios:     8.8, // Anuncios Meta + Google
+    impuestos:    4,   // Impuestos (calculado por venta)
+    otrosGastos:  2.4, // Otros gastos / materiales
+  },
 
   /**
    * Costos por modelo — nombres exactos tal como aparecen en la hoja Ventas.
@@ -46,6 +61,10 @@ export function loadConfig() {
       costosPorModelo: {
         ...DEFAULT_CONFIG.costosPorModelo,
         ...(saved.costosPorModelo || {}),
+      },
+      budgetPct: {
+        ...DEFAULT_CONFIG.budgetPct,
+        ...(saved.budgetPct || {}),
       },
     }
   } catch {
