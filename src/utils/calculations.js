@@ -99,6 +99,87 @@ export function calcVenta(venta, config) {
   return { quedaLibre, costoInversor, comision, envios, impuestos, modeloDesconocido }
 }
 
+// ─── Breakdown de egresos vs presupuesto % ───────────────────────────────────
+
+/**
+ * Calcula el desglose de egresos por categoría y compara contra el presupuesto %.
+ *
+ * Las categorías ventas-derivadas (comisiones, envíos, impuestos, inversores)
+ * se calculan desde la hoja Ventas. Las demás (anuncios, sueldos, otrosGastos)
+ * vienen de la hoja Egresos o del config de sueldos mensuales.
+ *
+ * @returns {Array} categorías con { id, icon, nombre, monto, realPct, budgetPct, varianza }
+ *                  varianza > 0  → a favor (gastaste menos de lo presupuestado)
+ *                  varianza < 0  → exceso  (te pasaste del límite)
+ */
+export function calcBudgetBreakdown(ventas, egresos, config, periodo = 'dia') {
+  const filtro = periodo === 'dia' ? isToday : isThisWeek
+
+  const ventasPeriodo  = ventas.filter(v => filtro(v.fecha))
+  const egresosPeriodo = egresos.filter(e => filtro(e.fecha))
+
+  const cobrado = ventasPeriodo.reduce((s, v) => s + v.precio, 0)
+  if (cobrado === 0) return { cobrado: 0, categorias: [] }
+
+  // — Montos derivados de ventas —
+  let totalInversores = 0
+  let totalComisiones = 0
+  let totalEnvios     = 0
+  let totalImpuestos  = 0
+
+  for (const v of ventasPeriodo) {
+    const { costoInversor, comision, envios, impuestos } = calcVenta(v, config)
+    totalInversores += costoInversor
+    totalComisiones += comision
+    totalEnvios     += envios
+    totalImpuestos  += impuestos
+  }
+
+  // — Montos de la hoja Egresos —
+  const totalAnuncios = egresosPeriodo
+    .filter(e => {
+      const cat = (e.categoria || '').toLowerCase()
+      return cat.includes('anunci') || cat === 'ads'
+    })
+    .reduce((s, e) => s + e.monto, 0)
+
+  const totalSueldosSheet = egresosPeriodo
+    .filter(e => (e.categoria || '').toLowerCase().includes('sueldo'))
+    .reduce((s, e) => s + e.monto, 0)
+
+  // Si no hay sueldos registrados en el período, estimar proporcional del mensual
+  const diasPeriodo   = periodo === 'dia' ? 1 : 7
+  const totalSueldos  = totalSueldosSheet > 0
+    ? totalSueldosSheet
+    : (config.sueldosMensuales / 30) * diasPeriodo
+
+  const totalOtrosGastos = egresosPeriodo
+    .filter(e => {
+      const cat = (e.categoria || '').toLowerCase()
+      return cat.includes('gasto') || cat.includes('material') || cat.includes('otro')
+    })
+    .reduce((s, e) => s + e.monto, 0)
+
+  const bp = config.budgetPct || {}
+
+  const categorias = [
+    { id: 'inversores',  icon: '🌿', nombre: 'Costo materia prima', monto: totalInversores },
+    { id: 'envios',      icon: '📦', nombre: 'Envíos',              monto: totalEnvios },
+    { id: 'comisiones',  icon: '🏪', nombre: 'Comisiones',          monto: totalComisiones },
+    { id: 'sueldos',     icon: '👷', nombre: 'Sueldos',             monto: totalSueldos },
+    { id: 'anuncios',    icon: '📣', nombre: 'Anuncios',            monto: totalAnuncios },
+    { id: 'impuestos',   icon: '📋', nombre: 'Impuestos',           monto: totalImpuestos },
+    { id: 'otrosGastos', icon: '🔧', nombre: 'Otros gastos',        monto: totalOtrosGastos },
+  ].map(cat => {
+    const realPct   = (cat.monto / cobrado) * 100
+    const budgetPct = bp[cat.id] ?? 0
+    const varianza  = budgetPct - realPct   // + = a favor, - = exceso
+    return { ...cat, realPct, budgetPct, varianza }
+  })
+
+  return { cobrado, categorias }
+}
+
 // ─── Métricas del día / semana ───────────────────────────────────────────────
 
 /**
