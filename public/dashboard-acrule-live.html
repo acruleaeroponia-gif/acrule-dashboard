@@ -516,15 +516,15 @@ const REFRESH_MS       = 5 * 60 * 1000;
 // Costos base por modelo (editables desde la UI, se guardan en localStorage)
 // Modelos exactos de la hoja de Ventas del Excel
 const DEFAULT_COSTOS_MODELO = {
-  'Huerta Acr 12P':      126829,
-  'Huerta Acr 24P':      149441,
-  'Huerta Acr 32P':      172053,
-  'Huerta Acr Led 28P':  240686,
-  'Upsell 12P':               0,
-  'Mini Baige':           30787,
-  'Mini Gris':            30787,
-  'Torre 1.0':           247342,
-  'NFT 288':                  0,
+  '13 Huerta Acr 12P':      126829,
+  '14 Huerta Acr 24P':      149441,
+  '14 Huerta Acr 32P':      172053,
+  '16 Huerta Acr Led 28P':  240686,
+  '17 Upsell 12P':               0,
+  '32 Mini Baige':           30787,
+  '32 Mini Gris':            30787,
+  '33 Torre 1.0':           247342,
+  '31 NFT 288':                  0,
 };
 
 function loadCostos() {
@@ -854,7 +854,7 @@ function calcPeriod() {
     return { ...cat, realPct, budgetPct, varianza };
   });
 
-  return { range, cobrado, totalInversores, totalAnuncios, ebitda, quedaLibreTotal,
+  return { range, cobrado, totalInversores, totalComisiones, totalAnuncios, ebitda, quedaLibreTotal,
            burnFijos, categorias, filasVentas, cantidadVentas:ventasP.length,
            modelosDesc:[...new Set(modelosDesc)] };
 }
@@ -890,9 +890,9 @@ function renderDashboard() {
   eb.className   = `badge ${ebitda >= 0 ? 'badge-green' : 'badge-red'}`;
 
   // Metrics
-  _setCard('metCobrado',    fmt(cobrado),          `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
-  _setCard('metComisiones', fmt(totalComisiones),  `${cobrado>0?(totalComisiones/cobrado*100).toFixed(1):0}% de la facturación`);
-  _setCard('metInversores', fmt(totalInversores),  `${cobrado>0?(totalInversores/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metCobrado',    fmt(cobrado),  `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
+  _setCard('metComisiones', fmt(com),      `${cobrado>0?(com/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metInversores', fmt(totalInversores), `${cobrado>0?(totalInversores/cobrado*100).toFixed(1):0}% de la facturación`);
   const quedaClass = quedaLibre>=0?'positive':'negative';
   _setCard('metQueda', fmtSigned(quedaLibre), `Margen bruto ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
   _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? '⚠ Sobre presupuesto':'Dentro del presupuesto',
@@ -1156,11 +1156,12 @@ function toggleModelEditor() {
 }
 
 function getModelosEnUso() {
-  // Modelos que aparecen en la hoja de Ventas del Excel (fuente de verdad)
+  // Solo los modelos que aparecen en la hoja de Ventas del Excel (fuente de verdad)
+  // Los nombres del DEFAULT se usan solo para inicializar costos, no para listar
   const fromData = [...new Set(allVentas.map(v => v.modelo).filter(Boolean))];
-  // Modelos del DEFAULT que no están en ventas aún (para tenerlos listos)
-  const fromDefaults = Object.keys(DEFAULT_COSTOS_MODELO);
-  return [...new Set([...fromData, ...fromDefaults])].sort();
+  // Si no hay datos aún, mostrar los del DEFAULT como referencia
+  if (fromData.length === 0) return Object.keys(DEFAULT_COSTOS_MODELO).sort();
+  return fromData.sort();
 }
 
 function renderModelGrid() {
