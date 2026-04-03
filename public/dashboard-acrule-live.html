@@ -547,7 +547,7 @@ const BUDGET_CATS = [
 
 /* ═══════════════════════════════════════════════════════════════
    CONFIGURACIÓN (localStorage)
-═══════════════════════════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════════ */
 const DEFAULT_CONFIG = {
   budgetPct: {
     inversores:   45,
@@ -758,7 +758,7 @@ async function fetchAll(silent=false) {
     allVentas  = parseVentas(vRows);
     allEgresos = parseEgresos(eRows);
     lastUpdated = new Date();
-    const hm = `${String(lastUpdated.getHours()).padStart(2,'00')}:${String(lastUpdated.getMinutes()).padStart(2,'00')}`;
+    const hm = `${String(lastUpdated.getHours()).padStart(2,'0')}:${String(lastUpdated.getMinutes()).padStart(2,'0')}`;
     document.getElementById('lastUpdatedTime').textContent = `Actualizado ${hm} hs`;
     showLoading(false);
     renderDashboard();
@@ -797,24 +797,29 @@ function calcPeriod() {
   }
 
   // ── Filtros de categoría en Egresos ────────────────────────────────────────
-  const esAnuncio   = c => c.includes('anunci') || c === 'ads' || c.includes('publicidad') || c.includes('marketing') || c.includes('meta') || c.includes('google ads');
-  const esSueldo    = c => c.includes('sueldo') || c.includes('salario');
-  const esLogistica = c => c.includes('logísti') || c.includes('logisti') || c.includes('envío') || c.includes('envio') || c.includes('flete') || c.includes('correo') || c.includes('despacho');
-  const esImpuesto  = c => c.includes('impuesto') || c.includes('tax') || c.includes('fiscal') || c.includes('afip') || c.includes('iibb') || c.includes('ingresos brutos');
+  // Normalización: quita acentos y pasa a minúsculas para comparación robusta
+  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  const totalAnuncios  = egresosP.filter(e => esAnuncio(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
-  const totalEnvios    = egresosP.filter(e => esLogistica(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
-  const totalImpuestos = egresosP.filter(e => esImpuesto(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
+  const esAnuncio   = c => { const n=norm(c); return n.includes('anunci') || n==='ads' || n.includes('publicidad') || n.includes('marketing') || n.includes('meta') || n.includes('google'); };
+  const esSueldo    = c => { const n=norm(c); return n.includes('sueldo') || n.includes('salario'); };
+  const esLogistica = c => { const n=norm(c); return n.includes('logisti') || n.includes('logistic') || n.includes('envio') || n.includes('flete') || n.includes('correo') || n.includes('despacho') || n.includes('shipping'); };
+  const esImpuesto  = c => { const n=norm(c); return n.includes('impuesto') || n.includes('tax') || n.includes('fiscal') || n.includes('afip') || n.includes('iibb') || n.includes('ingresos brutos') || n.includes('monotributo'); };
+  const esOtros     = c => { const n=norm(c); return n.includes('otro') || n.includes('varios') || n.includes('general') || n.includes('miscelaneo') || n.includes('miscelaneo'); };
 
-  const sueldosRow  = egresosP.filter(e => esSueldo(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
-  // Fallback a sueldo mensual prorrateado si no hay datos en Egresos
+  const totalAnuncios  = egresosP.filter(e => esAnuncio(e.categoria)).reduce((s,e)=>s+e.monto, 0);
+  const totalEnvios    = egresosP.filter(e => esLogistica(e.categoria)).reduce((s,e)=>s+e.monto, 0);
+  const totalImpuestos = egresosP.filter(e => esImpuesto(e.categoria)).reduce((s,e)=>s+e.monto, 0);
+
+  const sueldosRow   = egresosP.filter(e => esSueldo(e.categoria)).reduce((s,e)=>s+e.monto, 0);
   const totalSueldos = sueldosRow; // solo de la hoja Egresos, sin fallback estimado
 
-  // "Otros gastos" = todo lo que no cae en las categorías anteriores
+  // "Otros gastos" = explícitamente marcado como "Otros Gastos/Varios" en Egresos
+  // (no catch-all, para evitar absorber gastos mal categorizados)
   const totalOtros = egresosP
     .filter(e => {
-      const c = e.categoria.toLowerCase();
-      return !esAnuncio(c) && !esSueldo(c) && !esLogistica(c) && !esImpuesto(c);
+      const n = norm(e.categoria);
+      return n.includes('otro') || n.includes('varios') || n.includes('general') ||
+             (!esAnuncio(e.categoria) && !esSueldo(e.categoria) && !esLogistica(e.categoria) && !esImpuesto(e.categoria));
     })
     .reduce((s,e)=>s+e.monto, 0);
 
