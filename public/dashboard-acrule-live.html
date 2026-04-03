@@ -374,14 +374,19 @@
     </div>
     <div class="metrics-grid">
       <div class="metric-card" style="--accent-color:#3b82f6" id="metCobrado">
-        <div class="metric-label">💰 Cobrado</div>
+        <div class="metric-label">💰 Facturación</div>
         <div class="metric-value text-white">$0</div>
         <div class="metric-sub">0 ventas</div>
+      </div>
+      <div class="metric-card" style="--accent-color:#22c55e" id="metComisiones">
+        <div class="metric-label">🏪 Comisiones</div>
+        <div class="metric-value text-white">$0</div>
+        <div class="metric-sub">0% de la facturación</div>
       </div>
       <div class="metric-card" style="--accent-color:#a855f7" id="metInversores">
         <div class="metric-label">🌿 Pago inversores</div>
         <div class="metric-value text-white">$0</div>
-        <div class="metric-sub">0% del cobrado</div>
+        <div class="metric-sub">0% de la facturación</div>
       </div>
       <div class="metric-card" style="--accent-color:#22c55e" id="metQueda">
         <div class="metric-label">📊 Queda libre</div>
@@ -509,18 +514,17 @@ const SPREADSHEET_ID   = '1nKABP2ZvKKlFDdvUCvQ8jhgmbu-l1tErBz_w4ZZFGnM';
 const REFRESH_MS       = 5 * 60 * 1000;
 
 // Costos base por modelo (editables desde la UI, se guardan en localStorage)
-// Solo los modelos que aparecen en la hoja de Ventas del Excel
+// Modelos exactos de la hoja de Ventas del Excel
 const DEFAULT_COSTOS_MODELO = {
-  'Huerta Acrule - 32':                   172053,
-  'Huerta Acrule - 24':                   149441,
-  'Huerta Acrule - 12':                   126829,
-  'Huerta Led 28P':                       240686,
-  'Torre 1.0':                            247342,
-  'Mini Huerta Acrule 6 plantas - Beige':  30787,
-  'Mini Huerta Acrule 6 plantas - Gris':   30787,
-  'Apex 12P':                                  0,
-  'Insumos':                                   0,
-  'Extras':                                    0,
+  'Huerta Acr 12P':      126829,
+  'Huerta Acr 24P':      149441,
+  'Huerta Acr 32P':      172053,
+  'Huerta Acr Led 28P':  240686,
+  'Upsell 12P':               0,
+  'Mini Baige':           30787,
+  'Mini Gris':            30787,
+  'Torre 1.0':           247342,
+  'NFT 288':                  0,
 };
 
 function loadCostos() {
@@ -684,15 +688,18 @@ function parseNum(str) {
 
 function getCostoModelo(modelo) {
   if (!modelo) return 0;
-  const m = modelo.trim().toLowerCase();
+  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const m = norm(modelo);
+  // Exact match (normalizado)
   for (const [k,v] of Object.entries(COSTOS_MODELO)) {
-    if (k.toLowerCase() === m) return v;
+    if (norm(k) === m) return v;
   }
+  // Partial fuzzy match (normalizado)
   for (const [k,v] of Object.entries(COSTOS_MODELO)) {
-    if (m.includes(k.toLowerCase()) || k.toLowerCase().includes(m)) return v;
+    const nk = norm(k);
+    if (m.includes(nk) || nk.includes(m)) return v;
   }
-  if (m.includes('insumo') || m.includes('extra')) return 0;
-  return null; // unknown
+  return null; // desconocido → aparece en editor de modelos
 }
 
 function parseVentas(rows) {
@@ -702,8 +709,9 @@ function parseVentas(rows) {
   const iFecha    = col('fecha')   ?? 0;
   const iHora     = col('hora');
   const iModelo   = col('modelo')  ?? 2;
-  // "LO QUE COBRO" → buscar 'cobro' primero; fallback a 'precio cobrado', 'precio', índice 3
-  const iPrecio   = col('cobro') ?? col('cobrado') ?? col('precio') ?? 3;
+  // Facturación = lo que paga el cliente. Columna J (índice 9) es la fuente de verdad.
+  // Se busca primero por nombre, luego se cae a índice 9 (columna J).
+  const iPrecio   = col('factura') ?? col('facturac') ?? col('cobro') ?? col('cobrado') ?? col('precio') ?? 9;
   // Comisiones: buscar 'comisi' para capturar "Comisiones", "Comisión", etc.
   const iComision = col('comisi') ?? col('comision') ?? 4;
   return data
@@ -882,8 +890,9 @@ function renderDashboard() {
   eb.className   = `badge ${ebitda >= 0 ? 'badge-green' : 'badge-red'}`;
 
   // Metrics
-  _setCard('metCobrado', fmt(cobrado), `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
-  _setCard('metInversores', fmt(totalInversores), `${cobrado>0?(totalInversores/cobrado*100).toFixed(1):0}% del cobrado`);
+  _setCard('metCobrado',    fmt(cobrado),          `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
+  _setCard('metComisiones', fmt(totalComisiones),  `${cobrado>0?(totalComisiones/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metInversores', fmt(totalInversores),  `${cobrado>0?(totalInversores/cobrado*100).toFixed(1):0}% de la facturación`);
   const quedaClass = quedaLibre>=0?'positive':'negative';
   _setCard('metQueda', fmtSigned(quedaLibre), `Margen bruto ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
   _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? '⚠ Sobre presupuesto':'Dentro del presupuesto',
