@@ -441,9 +441,10 @@
       <div class="config-intro">
         Acá se lista cada modelo que aparece en la hoja de Ventas. Editá el costo de producción/inversión de cada uno.
         Esos costos se usan para calcular el <strong>Costo inversores</strong> y el margen por venta.
-        Los cambios se guardan automáticamente.
+        Hacé clic en <strong>💾 Guardar costos</strong> para que los cambios persistan.
       </div>
       <div class="model-grid" id="modelGrid"></div>
+      <div id="modelSaveBar" style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:0 4px"></div>
     </div>
 
     <!-- EGRESO CARDS -->
@@ -486,7 +487,7 @@
         <thead>
           <tr>
             <th>Fecha</th><th>Modelo</th><th>Cobrado</th>
-            <th>Costo inv.</th><th>Comisión</th><th>Queda libre</th><th>Estado</th>
+            <th>Costo inv.</th><th>Comisión</th><th>% Com.</th><th>Queda libre</th><th>Estado</th>
           </tr>
         </thead>
         <tbody id="ventasTbody">
@@ -508,24 +509,18 @@ const SPREADSHEET_ID   = '1nKABP2ZvKKlFDdvUCvQ8jhgmbu-l1tErBz_w4ZZFGnM';
 const REFRESH_MS       = 5 * 60 * 1000;
 
 // Costos base por modelo (editables desde la UI, se guardan en localStorage)
+// Solo los modelos que aparecen en la hoja de Ventas del Excel
 const DEFAULT_COSTOS_MODELO = {
-  'Mini Huerta Acrule 6 plantas - Gris':  30787,
-  'Mini Huerta Acrule 6 plantas - Beige': 30787,
-  'Mini Huerta Acrule 6 plantas':         30787,
-  'Huerta Acrule - 32':                  172053,
-  'Huerta Acrule - 24':                  149441,
-  'Huerta Acrule - 12':                  126829,
-  'Nutrientes Acrule - Hidroponia A+B+C':     0,
-  'Nutrientes Acrule':                        0,
-  'Mini Huerta Nacional': 30787,
-  'Mini Huerta China':    81337,
-  'Huerta 12P':          126829,
-  'Huerta 24P':          149441,
-  'Huerta 32P':          172053,
-  'Huerta Led 28P':      240686,
-  'Torre 1.0':           247342,
-  'Upsell':               22612,
-  'Insumos':                  0,
+  'Huerta Acrule - 32':                   172053,
+  'Huerta Acrule - 24':                   149441,
+  'Huerta Acrule - 12':                   126829,
+  'Huerta Led 28P':                       240686,
+  'Torre 1.0':                            247342,
+  'Mini Huerta Acrule 6 plantas - Beige':  30787,
+  'Mini Huerta Acrule 6 plantas - Gris':   30787,
+  'Apex 12P':                                  0,
+  'Insumos':                                   0,
+  'Extras':                                    0,
 };
 
 function loadCostos() {
@@ -552,7 +547,7 @@ const BUDGET_CATS = [
 
 /* ═══════════════════════════════════════════════════════════════
    CONFIGURACIÓN (localStorage)
-═══════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════════════════════════════ */
 const DEFAULT_CONFIG = {
   budgetPct: {
     inversores:   45,
@@ -763,7 +758,7 @@ async function fetchAll(silent=false) {
     allVentas  = parseVentas(vRows);
     allEgresos = parseEgresos(eRows);
     lastUpdated = new Date();
-    const hm = `${String(lastUpdated.getHours()).padStart(2,'0')}:${String(lastUpdated.getMinutes()).padStart(2,'0')}`;
+    const hm = `${String(lastUpdated.getHours()).padStart(2,'00')}:${String(lastUpdated.getMinutes()).padStart(2,'00')}`;
     document.getElementById('lastUpdatedTime').textContent = `Actualizado ${hm} hs`;
     showLoading(false);
     renderDashboard();
@@ -813,7 +808,7 @@ function calcPeriod() {
 
   const sueldosRow  = egresosP.filter(e => esSueldo(e.categoria.toLowerCase())).reduce((s,e)=>s+e.monto, 0);
   // Fallback a sueldo mensual prorrateado si no hay datos en Egresos
-  const totalSueldos = sueldosRow > 0 ? sueldosRow : (config.sueldosMensuales / 30 * days);
+  const totalSueldos = sueldosRow; // solo de la hoja Egresos, sin fallback estimado
 
   // "Otros gastos" = todo lo que no cae en las categorías anteriores
   const totalOtros = egresosP
@@ -1040,7 +1035,7 @@ function renderTablaVentas(filasVentas, cantidadVentas) {
   const tbody = document.getElementById('ventasTbody'); if(!tbody) return;
   const rows = filasVentas.slice(-25).reverse();
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No hay ventas registradas en este período.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No hay ventas registradas en este período.</td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(v => {
@@ -1057,6 +1052,7 @@ function renderTablaVentas(filasVentas, cantidadVentas) {
         <td style="font-weight:600">${fmt(v.precio)}</td>
         <td style="color:var(--muted)">${fmt(v.costoInversor)}</td>
         <td style="color:var(--muted)">${fmt(v.comision)}</td>
+        <td style="color:var(--muted);font-size:.78rem">${v.precio>0?(v.comision/v.precio*100).toFixed(1):0}%</td>
         <td class="${v.quedaLibre>=0?'text-green':'text-red'}" style="font-weight:700">${fmtSigned(v.quedaLibre)}</td>
         <td>${tag}</td>
       </tr>`;
@@ -1146,12 +1142,11 @@ function toggleModelEditor() {
 }
 
 function getModelosEnUso() {
-  // Todos los modelos únicos encontrados en la planilla de ventas
+  // Modelos que aparecen en la hoja de Ventas del Excel (fuente de verdad)
   const fromData = [...new Set(allVentas.map(v => v.modelo).filter(Boolean))];
-  // Más los modelos base del config
-  const fromDefaults = Object.keys(DEFAULT_COSTOS_MODELO).filter(k => DEFAULT_COSTOS_MODELO[k] > 0);
-  const all = [...new Set([...fromData, ...fromDefaults])].sort();
-  return all;
+  // Modelos del DEFAULT que no están en ventas aún (para tenerlos listos)
+  const fromDefaults = Object.keys(DEFAULT_COSTOS_MODELO);
+  return [...new Set([...fromData, ...fromDefaults])].sort();
 }
 
 function renderModelGrid() {
@@ -1170,31 +1165,57 @@ function renderModelGrid() {
           <div class="model-name">${nombre}</div>
           ${isNew ? '<div class="model-name-unknown">⚠ Nuevo modelo — asigná un costo</div>' : ''}
           ${inData && !isNew ? '<div style="font-size:.68rem;color:var(--green);margin-top:1px">✓ En ventas</div>' : ''}
+          ${!inData ? '<div style="font-size:.68rem;color:var(--muted);margin-top:1px">— Sin ventas aún</div>' : ''}
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <span class="model-peso">$</span>
           <input class="model-cost-input" type="number" min="0" step="100"
             value="${costo}"
-            onchange="onModelCost(${JSON.stringify(nombre)}, this.value)"
+            oninput="stageCosto(${JSON.stringify(nombre)}, this.value)"
           />
         </div>
       </div>`;
   }).join('');
 
+  // Footer con botón guardar
+  const saveBar = document.getElementById('modelSaveBar');
+  if (saveBar) {
+    saveBar.innerHTML = `
+      <button class="btn" onclick="saveAllCostos()" style="background:var(--blue);border-color:var(--blue);color:#fff;padding:8px 18px;font-size:.84rem">
+        💾 Guardar costos
+      </button>
+      <span id="modelSaveMsg" style="font-size:.78rem;color:var(--green);display:none">✅ Costos guardados</span>`;
+  }
+
   // Subtitle
   const newCount = modelos.filter(m => fromData.has(m) && !(m in DEFAULT_COSTOS_MODELO)).length;
   const sub = document.getElementById('modelSubtitle');
-  if (sub) sub.textContent = newCount > 0
+  if (sub && !modelEditorOpen) sub.textContent = newCount > 0
     ? `⚠ ${newCount} modelo${newCount>1?'s':''} nuevo${newCount>1?'s':''} sin costo asignado`
-    : `${modelos.length} modelos configurados`;
+    : `${modelos.filter(m=>fromData.has(m)).length} modelos en ventas configurados`;
+}
+
+// Actualiza en memoria mientras se escribe (sin guardar aún)
+function stageCosto(nombre, val) {
+  COSTOS_MODELO[nombre] = parseFloat(val) || 0;
+}
+
+// Guarda todos los costos a localStorage con confirmación visual
+function saveAllCostos() {
+  saveCostos();
+  renderDashboard();
+  const msg = document.getElementById('modelSaveMsg');
+  if (msg) {
+    msg.style.display = 'inline';
+    setTimeout(() => { msg.style.display = 'none'; }, 2500);
+  }
 }
 
 function onModelCost(nombre, val) {
-  const n = parseFloat(val) || 0;
-  COSTOS_MODELO[nombre] = n;
+  COSTOS_MODELO[nombre] = parseFloat(val) || 0;
   saveCostos();
-  renderDashboard(); // recalculate
-  renderModelGrid(); // refresh grid
+  renderDashboard();
+  renderModelGrid();
 }
 
 /* ═══════════════════════════════════════════════════════════════
