@@ -732,8 +732,8 @@ function parseEgresos(rows) {
   const iFecha     = col('fecha')   ?? 0;
   // "Categoria" en la planilla real
   const iCategoria = col('categor') ?? col('categoria') ?? col('tipo') ?? 1;
-  // La columna de monto puede llamarse "Monto", "Importe", "Total", "Valor", "Precio", o incluso "Egreso/Ingreso"
-  const iMonto     = col('monto') ?? col('importe') ?? col('total') ?? col('valor') ?? col('egreso') ?? col('ingreso') ?? col('precio') ?? 2;
+  // Columna O (índice 14) = "Total neto" = monto real del egreso
+  const iMonto     = col('total neto') ?? col('neto') ?? col('monto') ?? col('importe') ?? col('total') ?? col('valor') ?? col('egreso') ?? col('ingreso') ?? col('precio') ?? 14;
   return data
     .filter(r => r[iFecha] && r[iMonto] && parseNum(r[iMonto]) !== 0)
     .map(r => ({
