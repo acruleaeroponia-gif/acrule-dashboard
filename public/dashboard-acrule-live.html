@@ -711,7 +711,7 @@ function parseVentas(rows) {
   const iModelo   = col('modelo')  ?? 2;
   // Facturación = lo que paga el cliente. Columna J (índice 9) es la fuente de verdad.
   // Se busca primero por nombre, luego se cae a índice 9 (columna J).
-  const iPrecio   = col('factura') ?? col('facturac') ?? col('cobro') ?? col('cobrado') ?? col('precio') ?? 9;
+  const iPrecio   = col('lo que paga') ?? col('paga') ?? col('factura') ?? col('facturac') ?? col('cobro') ?? col('cobrado') ?? 9;
   // Comisiones: buscar 'comisi' para capturar "Comisiones", "Comisión", etc.
   const iComision = col('comisi') ?? col('comision') ?? 4;
   return data
