@@ -262,6 +262,21 @@
   .model-cost-input:focus { outline:none; border-color:var(--blue); }
   .model-peso { color:var(--muted); font-size:.8rem; }
   .model-info { display:flex; flex-direction:column; flex:1; min-width:0; overflow:hidden; }
+  .tipo-toggle { display:flex; gap:4px; margin-top:5px; }
+  .tipo-btn { font-size:.63rem; padding:2px 8px; border-radius:5px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:all .12s; white-space:nowrap; }
+  .tipo-btn.active-inv { background:rgba(168,85,247,.18); border-color:#a855f7; color:#d8b4fe; font-weight:700; }
+  .tipo-btn.active-pro { background:rgba(14,165,233,.18); border-color:#0ea5e9; color:#7dd3fc; font-weight:700; }
+  .tipo-btn:hover:not(.active-inv):not(.active-pro) { border-color:var(--blue); color:var(--text); }
+  .model-del-btn { background:transparent; border:1px solid transparent; color:var(--muted); font-size:.78rem; cursor:pointer; padding:3px 6px; border-radius:6px; transition:all .12s; flex-shrink:0; line-height:1; }
+  .model-del-btn:hover { border-color:var(--red); color:var(--red); background:rgba(239,68,68,.08); }
+  .tipo-section-hdr { grid-column:1/-1; font-size:.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; padding:10px 4px 4px; border-top:1px solid var(--border); margin-top:4px; display:flex; align-items:center; gap:8px; }
+  .tipo-section-hdr:first-child { border-top:none; margin-top:0; padding-top:2px; }
+  .add-model-form { grid-column:1/-1; background:var(--surface2); border:1px dashed var(--border); border-radius:11px; padding:12px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px; }
+  .add-model-form input[type=text], .add-model-form input[type=number] { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:5px 9px; font-size:.8rem; }
+  .add-model-form input[type=text] { flex:1; min-width:140px; }
+  .add-model-form input[type=number] { width:110px; }
+  .add-model-form input:focus { outline:none; border-color:var(--blue); }
+  .add-model-form select { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:5px 9px; font-size:.8rem; cursor:pointer; }
 
   /* ── LOADING ── */
   #loadingOverlay {
@@ -388,6 +403,11 @@
         <div class="metric-value text-white">$0</div>
         <div class="metric-sub">0% de la facturación</div>
       </div>
+      <div class="metric-card" style="--accent-color:#0ea5e9" id="metCostoPropio">
+        <div class="metric-label">📦 Costo propio</div>
+        <div class="metric-value text-white">$0</div>
+        <div class="metric-sub">0% de la facturación</div>
+      </div>
       <div class="metric-card" style="--accent-color:#22c55e" id="metQueda">
         <div class="metric-label">📊 Queda libre</div>
         <div class="metric-value text-green">$0</div>
@@ -444,9 +464,7 @@
     </div>
     <div class="model-editor-panel" id="modelPanel">
       <div class="config-intro">
-        Acá se lista cada modelo que aparece en la hoja de Ventas. Editá el costo de producción/inversión de cada uno.
-        Esos costos se usan para calcular el <strong>Costo inversores</strong> y el margen por venta.
-        Hacé clic en <strong>💾 Guardar costos</strong> para que los cambios persistan.
+        Editá el costo y el tipo de cada modelo. <strong>🌿 Pago a inversores</strong> = plata que se devuelve semanalmente a los inversores (huertas 12P, 24P, 32P, upsell). <strong>📦 Costo propio</strong> = plata que se guarda para reponer stock (minis, Torre 1.0, insumos). Podés agregar o eliminar modelos. Los cambios se guardan al hacer <strong>💾 Guardar costos</strong>.
       </div>
       <div class="model-grid" id="modelGrid"></div>
       <div id="modelSaveBar" style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:0 4px"></div>
@@ -527,6 +545,20 @@ const DEFAULT_COSTOS_MODELO = {
   '31 NFT 288':                  0,
 };
 
+// 'inversores' = plata que se devuelve semana a semana a los inversores (huertas 12P, 24P, 32P, upsell)
+// 'propio'     = plata que se guarda para reponer stock/insumos (minis, Torre 1.0, NFT)
+const DEFAULT_TIPOS_MODELO = {
+  '13 Huerta Acr 12P':     'inversores',
+  '14 Huerta Acr 24P':     'inversores',
+  '14 Huerta Acr 32P':     'inversores',
+  '16 Huerta Acr Led 28P': 'inversores',
+  '17 Upsell 12P':         'inversores',
+  '32 Mini Baige':         'propio',
+  '32 Mini Gris':          'propio',
+  '33 Torre 1.0':          'propio',
+  '31 NFT 288':            'propio',
+};
+
 function loadCostos() {
   try {
     const raw = localStorage.getItem('acrule_costos');
@@ -539,14 +571,45 @@ function saveCostos() {
 }
 let COSTOS_MODELO = loadCostos();
 
+function loadTipos() {
+  try {
+    const raw = localStorage.getItem('acrule_tipos');
+    const saved = raw ? JSON.parse(raw) : {};
+    return { ...DEFAULT_TIPOS_MODELO, ...saved };
+  } catch { return { ...DEFAULT_TIPOS_MODELO }; }
+}
+function saveTipos() {
+  localStorage.setItem('acrule_tipos', JSON.stringify(TIPOS_MODELO));
+}
+let TIPOS_MODELO = loadTipos();
+
+function loadDeletedModelos() {
+  try { return new Set(JSON.parse(localStorage.getItem('acrule_deleted') || '[]')); }
+  catch { return new Set(); }
+}
+function saveDeletedModelos() {
+  localStorage.setItem('acrule_deleted', JSON.stringify([...DELETED_MODELOS]));
+}
+let DELETED_MODELOS = loadDeletedModelos();
+
+function loadCustomModelos() {
+  try { return JSON.parse(localStorage.getItem('acrule_custom') || '[]'); }
+  catch { return []; }
+}
+function saveCustomModelos() {
+  localStorage.setItem('acrule_custom', JSON.stringify(CUSTOM_MODELOS));
+}
+let CUSTOM_MODELOS = loadCustomModelos();
+
 const BUDGET_CATS = [
-  { id:'inversores',  icon:'🌿', label:'Costo inversores (mat. prima)', color:'#a855f7' },
-  { id:'comisiones',  icon:'🏪', label:'Comisiones ML/WEB',             color:'#22c55e' },
-  { id:'envios',      icon:'📦', label:'Envíos',                         color:'#3b82f6' },
-  { id:'impuestos',   icon:'📋', label:'Impuestos',                      color:'#14b8a6' },
-  { id:'anuncios',    icon:'📣', label:'Anuncios (Meta + Google)',        color:'#f97316' },
-  { id:'sueldos',     icon:'👷', label:'Sueldos',                         color:'#8b5cf6' },
-  { id:'otrosGastos', icon:'🔧', label:'Otros gastos',                   color:'#eab308' },
+  { id:'pagoInversores', icon:'🌿', label:'Pago a inversores (12P, 24P, 32P…)', color:'#a855f7' },
+  { id:'costoPropio',    icon:'📦', label:'Costo propio (minis, Torre, NFT)',    color:'#0ea5e9' },
+  { id:'comisiones',     icon:'🏪', label:'Comisiones ML/WEB',                  color:'#22c55e' },
+  { id:'envios',         icon:'🚚', label:'Envíos',                              color:'#3b82f6' },
+  { id:'impuestos',      icon:'📋', label:'Impuestos',                           color:'#14b8a6' },
+  { id:'anuncios',       icon:'📣', label:'Anuncios (Meta + Google)',             color:'#f97316' },
+  { id:'sueldos',        icon:'👷', label:'Sueldos',                              color:'#8b5cf6' },
+  { id:'otrosGastos',    icon:'🔧', label:'Otros gastos',                        color:'#eab308' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -554,13 +617,14 @@ const BUDGET_CATS = [
 ═══════════════════════════════════════════════════════════════ */
 const DEFAULT_CONFIG = {
   budgetPct: {
-    inversores:   45,
-    comisiones:   16,
-    envios:       17,
-    impuestos:     4,
-    anuncios:      8.8,
-    sueldos:       6.8,
-    otrosGastos:   2.4,
+    pagoInversores: 35,
+    costoPropio:    10,
+    comisiones:     16,
+    envios:         17,
+    impuestos:       4,
+    anuncios:        8.8,
+    sueldos:         6.8,
+    otrosGastos:     2.4,
   },
   sueldosMensuales: 6500000,
 };
@@ -702,6 +766,22 @@ function getCostoModelo(modelo) {
   return null; // desconocido → aparece en editor de modelos
 }
 
+function getTipoModelo(modelo) {
+  if (!modelo) return 'propio';
+  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const m = norm(modelo);
+  // Exact match
+  for (const [k,v] of Object.entries(TIPOS_MODELO)) {
+    if (norm(k) === m) return v;
+  }
+  // Fuzzy match
+  for (const [k,v] of Object.entries(TIPOS_MODELO)) {
+    const nk = norm(k);
+    if (m.includes(nk) || nk.includes(m)) return v;
+  }
+  return 'propio'; // default: costo propio
+}
+
 function parseVentas(rows) {
   if (!rows || rows.length < 2) return [];
   const [header, ...data] = rows;
@@ -787,7 +867,7 @@ function calcPeriod() {
   const ventasP  = allVentas.filter(v => inRange(v.fecha, from, to));
   const egresosP = allEgresos.filter(e => inRange(e.fecha, from, to));
 
-  let cobrado=0, totalInversores=0, totalComisiones=0;
+  let cobrado=0, totalPagoInversores=0, totalCostoPropio=0, totalComisiones=0;
   const filasVentas = [];
   const modelosDesc = [];
 
@@ -795,14 +875,17 @@ function calcPeriod() {
     const costoRaw  = getCostoModelo(v.modelo);
     const costoInv  = costoRaw ?? 0;
     if (costoRaw===null) modelosDesc.push(v.modelo);
+    const tipo = getTipoModelo(v.modelo);
     // Margen bruto por venta = cobrado - costo modelo - comisión
     const margenBruto = v.precio - costoInv - v.comision;
 
     cobrado         += v.precio;
-    totalInversores += costoInv;
+    if (tipo === 'inversores') totalPagoInversores += costoInv;
+    else                       totalCostoPropio    += costoInv;
     totalComisiones += v.comision;
     filasVentas.push({ ...v, costoInversor:costoInv, quedaLibre:margenBruto });
   }
+  const totalInversores = totalPagoInversores + totalCostoPropio; // suma total para backward-compat
 
   // ── Filtros de categoría en Egresos ────────────────────────────────────────
   // Normalización: quita acentos y pasa a minúsculas para comparación robusta
@@ -840,13 +923,14 @@ function calcPeriod() {
   // Budget categories con varianza
   const base = cobrado;
   const categorias = [
-    { id:'inversores',  icon:'🌿', nombre:'Costo inversores', sub:'Costo de modelos vendidos', monto:totalInversores,  color:'#a855f7' },
-    { id:'comisiones',  icon:'🏪', nombre:'Comisiones',       sub:'MercadoLibre / WEB',         monto:totalComisiones,  color:'#22c55e' },
-    { id:'envios',      icon:'📦', nombre:'Envíos',           sub:'Logística y envío',          monto:totalEnvios,      color:'#3b82f6' },
-    { id:'impuestos',   icon:'📋', nombre:'Impuestos',        sub:'AFIP / IIBB / Fiscal',       monto:totalImpuestos,   color:'#14b8a6' },
-    { id:'anuncios',    icon:'📣', nombre:'Anuncios',         sub:'Meta + Google Ads',          monto:totalAnuncios,    color:'#f97316' },
-    { id:'sueldos',     icon:'👷', nombre:'Sueldos',          sub:'Personal',                   monto:totalSueldos,     color:'#8b5cf6' },
-    { id:'otrosGastos', icon:'🔧', nombre:'Otros gastos',     sub:'Materia prima + varios',     monto:totalOtros,       color:'#eab308' },
+    { id:'pagoInversores', icon:'🌿', nombre:'Pago a inversores', sub:'Se devuelve a inversores (12P, 24P, 32P…)', monto:totalPagoInversores, color:'#a855f7' },
+    { id:'costoPropio',    icon:'📦', nombre:'Costo propio',      sub:'Reponer stock: minis, Torre, insumos',      monto:totalCostoPropio,    color:'#0ea5e9' },
+    { id:'comisiones',     icon:'🏪', nombre:'Comisiones',        sub:'MercadoLibre / WEB',                        monto:totalComisiones,     color:'#22c55e' },
+    { id:'envios',         icon:'🚚', nombre:'Envíos',            sub:'Logística y envío',                         monto:totalEnvios,         color:'#3b82f6' },
+    { id:'impuestos',      icon:'📋', nombre:'Impuestos',         sub:'AFIP / IIBB / Fiscal',                      monto:totalImpuestos,      color:'#14b8a6' },
+    { id:'anuncios',       icon:'📣', nombre:'Anuncios',          sub:'Meta + Google Ads',                         monto:totalAnuncios,       color:'#f97316' },
+    { id:'sueldos',        icon:'👷', nombre:'Sueldos',           sub:'Personal',                                  monto:totalSueldos,        color:'#8b5cf6' },
+    { id:'otrosGastos',    icon:'🔧', nombre:'Otros gastos',      sub:'Materia prima + varios',                    monto:totalOtros,          color:'#eab308' },
   ].map(cat => {
     const realPct   = base > 0 ? (cat.monto / base * 100) : 0;
     const budgetPct = config.budgetPct[cat.id] || 0;
@@ -854,7 +938,8 @@ function calcPeriod() {
     return { ...cat, realPct, budgetPct, varianza };
   });
 
-  return { range, cobrado, totalInversores, totalComisiones, totalAnuncios, ebitda, quedaLibreTotal,
+  return { range, cobrado, totalInversores, totalPagoInversores, totalCostoPropio,
+           totalComisiones, totalAnuncios, ebitda, quedaLibreTotal,
            burnFijos, categorias, filasVentas, cantidadVentas:ventasP.length,
            modelosDesc:[...new Set(modelosDesc)] };
 }
@@ -877,7 +962,7 @@ function fmtSigned(n) {
 ═══════════════════════════════════════════════════════════════ */
 function renderDashboard() {
   const data = calcPeriod();
-  const { range, cobrado, totalInversores, ebitda, categorias, filasVentas, cantidadVentas } = data;
+  const { range, cobrado, totalInversores, totalPagoInversores, totalCostoPropio, ebitda, categorias, filasVentas, cantidadVentas } = data;
   const com = categorias.find(c=>c.id==='comisiones')?.monto||0;
   const env = categorias.find(c=>c.id==='envios')?.monto||0;
   const imp = categorias.find(c=>c.id==='impuestos')?.monto||0;
@@ -892,7 +977,8 @@ function renderDashboard() {
   // Metrics
   _setCard('metCobrado',    fmt(cobrado),  `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
   _setCard('metComisiones', fmt(com),      `${cobrado>0?(com/cobrado*100).toFixed(1):0}% de la facturación`);
-  _setCard('metInversores', fmt(totalInversores), `${cobrado>0?(totalInversores/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metInversores',  fmt(totalPagoInversores), `${cobrado>0?(totalPagoInversores/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metCostoPropio', fmt(totalCostoPropio),    `${cobrado>0?(totalCostoPropio/cobrado*100).toFixed(1):0}% de la facturación`);
   const quedaClass = quedaLibre>=0?'positive':'negative';
   _setCard('metQueda', fmtSigned(quedaLibre), `Margen bruto ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
   _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? '⚠ Sobre presupuesto':'Dentro del presupuesto',
@@ -1156,12 +1242,12 @@ function toggleModelEditor() {
 }
 
 function getModelosEnUso() {
-  // Solo los modelos que aparecen en la hoja de Ventas del Excel (fuente de verdad)
-  // Los nombres del DEFAULT se usan solo para inicializar costos, no para listar
   const fromData = [...new Set(allVentas.map(v => v.modelo).filter(Boolean))];
-  // Si no hay datos aún, mostrar los del DEFAULT como referencia
-  if (fromData.length === 0) return Object.keys(DEFAULT_COSTOS_MODELO).sort();
-  return fromData.sort();
+  const base = fromData.length === 0 ? Object.keys(DEFAULT_COSTOS_MODELO) : fromData;
+  // Incluir modelos agregados manualmente
+  const todos = [...new Set([...base, ...CUSTOM_MODELOS])];
+  // Excluir modelos eliminados
+  return todos.filter(m => !DELETED_MODELOS.has(m)).sort();
 }
 
 function renderModelGrid() {
@@ -1170,27 +1256,65 @@ function renderModelGrid() {
   const modelos = getModelosEnUso();
   const fromData = new Set(allVentas.map(v => v.modelo).filter(Boolean));
 
-  grid.innerHTML = modelos.map(nombre => {
-    const costo = COSTOS_MODELO[nombre] ?? 0;
-    const isNew = fromData.has(nombre) && !(nombre in DEFAULT_COSTOS_MODELO);
+  // Separar por tipo
+  const grupos = {
+    inversores: modelos.filter(m => getTipoModelo(m) === 'inversores'),
+    propio:     modelos.filter(m => getTipoModelo(m) !== 'inversores'),
+  };
+
+  function rowHTML(nombre) {
+    const costo  = COSTOS_MODELO[nombre] ?? 0;
+    const tipo   = getTipoModelo(nombre);
+    const isNew  = fromData.has(nombre) && !(nombre in DEFAULT_COSTOS_MODELO) && !CUSTOM_MODELOS.includes(nombre);
     const inData = fromData.has(nombre);
+    const isCustom = CUSTOM_MODELOS.includes(nombre);
     return `
       <div class="model-row ${isNew ? 'unknown' : ''}">
         <div class="model-info">
-          <div class="model-name">${nombre}</div>
-          ${isNew ? '<div class="model-name-unknown">⚠ Nuevo modelo — asigná un costo</div>' : ''}
-          ${inData && !isNew ? '<div style="font-size:.68rem;color:var(--green);margin-top:1px">✓ En ventas</div>' : ''}
-          ${!inData ? '<div style="font-size:.68rem;color:var(--muted);margin-top:1px">— Sin ventas aún</div>' : ''}
+          <div class="model-name">${nombre}${isCustom ? ' <span style="font-size:.62rem;color:var(--blue);vertical-align:middle">✦ manual</span>' : ''}</div>
+          ${isNew    ? '<div class="model-name-unknown">⚠ Nuevo — asigná un costo</div>' : ''}
+          ${inData && !isNew ? '<div style="font-size:.65rem;color:var(--green);margin-top:1px">✓ En ventas</div>' : ''}
+          ${!inData   ? '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">— Sin ventas aún</div>' : ''}
+          <div class="tipo-toggle">
+            <button class="tipo-btn ${tipo==='inversores'?'active-inv':''}" onclick="stageTipo(${JSON.stringify(nombre)},'inversores')">🌿 Inversores</button>
+            <button class="tipo-btn ${tipo!=='inversores'?'active-pro':''}" onclick="stageTipo(${JSON.stringify(nombre)},'propio')">📦 Propio</button>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:4px">
+        <div style="display:flex;align-items:center;gap:6px">
           <span class="model-peso">$</span>
           <input class="model-cost-input" type="number" min="0" step="100"
             value="${costo}"
             oninput="stageCosto(${JSON.stringify(nombre)}, this.value)"
           />
+          <button class="model-del-btn" onclick="deleteModelo(${JSON.stringify(nombre)})" title="Eliminar modelo">🗑</button>
         </div>
       </div>`;
-  }).join('');
+  }
+
+  let html = '';
+  if (grupos.inversores.length > 0) {
+    html += `<div class="tipo-section-hdr"><span style="color:#d8b4fe">🌿</span> Pago a inversores — se devuelve semanalmente</div>`;
+    html += grupos.inversores.map(rowHTML).join('');
+  }
+  if (grupos.propio.length > 0) {
+    html += `<div class="tipo-section-hdr"><span style="color:#7dd3fc">📦</span> Costo propio — se guarda para reponer stock</div>`;
+    html += grupos.propio.map(rowHTML).join('');
+  }
+
+  // Formulario para agregar modelo
+  html += `
+    <div class="add-model-form">
+      <span style="font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap">➕ Agregar modelo</span>
+      <input type="text"   id="newModelNombre" placeholder="Nombre del modelo" />
+      <input type="number" id="newModelCosto"  placeholder="Costo $" min="0" step="100" />
+      <select id="newModelTipo">
+        <option value="inversores">🌿 Inversores</option>
+        <option value="propio">📦 Propio</option>
+      </select>
+      <button class="btn" onclick="confirmAddModelo()" style="background:var(--blue);border-color:var(--blue);color:#fff;padding:6px 14px;font-size:.8rem">Agregar</button>
+    </div>`;
+
+  grid.innerHTML = html;
 
   // Footer con botón guardar
   const saveBar = document.getElementById('modelSaveBar');
@@ -1203,11 +1327,11 @@ function renderModelGrid() {
   }
 
   // Subtitle
-  const newCount = modelos.filter(m => fromData.has(m) && !(m in DEFAULT_COSTOS_MODELO)).length;
+  const newCount = modelos.filter(m => fromData.has(m) && !(m in DEFAULT_COSTOS_MODELO) && !CUSTOM_MODELOS.includes(m)).length;
   const sub = document.getElementById('modelSubtitle');
   if (sub && !modelEditorOpen) sub.textContent = newCount > 0
     ? `⚠ ${newCount} modelo${newCount>1?'s':''} nuevo${newCount>1?'s':''} sin costo asignado`
-    : `${modelos.filter(m=>fromData.has(m)).length} modelos en ventas configurados`;
+    : `${modelos.filter(m=>fromData.has(m)).length} modelos configurados ✅`;
 }
 
 // Actualiza en memoria mientras se escribe (sin guardar aún)
@@ -1215,9 +1339,50 @@ function stageCosto(nombre, val) {
   COSTOS_MODELO[nombre] = parseFloat(val) || 0;
 }
 
+// Actualiza el tipo de un modelo y guarda
+function stageTipo(nombre, tipo) {
+  TIPOS_MODELO[nombre] = tipo;
+  saveTipos();
+  renderDashboard();
+  renderModelGrid();
+}
+
+// Elimina un modelo (lo agrega a la lista de eliminados y remueve de custom si aplica)
+function deleteModelo(nombre) {
+  if (!confirm(`¿Eliminar "${nombre}" de la lista de costos?`)) return;
+  DELETED_MODELOS.add(nombre);
+  saveDeletedModelos();
+  // Si era un modelo custom, también lo removemos
+  const idx = CUSTOM_MODELOS.indexOf(nombre);
+  if (idx >= 0) { CUSTOM_MODELOS.splice(idx, 1); saveCustomModelos(); }
+  // Limpiar de COSTOS y TIPOS
+  delete COSTOS_MODELO[nombre];
+  saveCostos();
+  delete TIPOS_MODELO[nombre];
+  saveTipos();
+  renderDashboard();
+  renderModelGrid();
+}
+
+// Agrega un modelo nuevo manualmente
+function confirmAddModelo() {
+  const nombre = (document.getElementById('newModelNombre')?.value || '').trim();
+  const costo  = parseFloat(document.getElementById('newModelCosto')?.value) || 0;
+  const tipo   = document.getElementById('newModelTipo')?.value || 'propio';
+  if (!nombre) { alert('Ingresá un nombre para el modelo.'); return; }
+  if (DELETED_MODELOS.has(nombre)) DELETED_MODELOS.delete(nombre); // restaurar si estaba eliminado
+  if (!CUSTOM_MODELOS.includes(nombre)) { CUSTOM_MODELOS.push(nombre); saveCustomModelos(); }
+  COSTOS_MODELO[nombre] = costo;   saveCostos();
+  TIPOS_MODELO[nombre]  = tipo;    saveTipos();
+  saveDeletedModelos();
+  renderDashboard();
+  renderModelGrid();
+}
+
 // Guarda todos los costos a localStorage con confirmación visual
 function saveAllCostos() {
   saveCostos();
+  saveTipos();
   renderDashboard();
   const msg = document.getElementById('modelSaveMsg');
   if (msg) {
