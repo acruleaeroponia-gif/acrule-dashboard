@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard Acrule ð±</title>
+<title>Dashboard Acrule 🌱</title>
 <script src="https://accounts.google.com/gsi/client" async></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,7 +15,7 @@
   }
   body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; min-height:100vh; }
 
-  /* ââ LOGIN ââ */
+  /* ── LOGIN ── */
   #loginScreen {
     min-height:100vh; display:flex; align-items:center; justify-content:center;
     padding:24px; flex-direction:column; gap:28px;
@@ -38,7 +38,7 @@
   .btn-google:disabled { opacity:.5; cursor:not-allowed; }
   .login-error { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:#fca5a5; border-radius:10px; padding:10px 14px; font-size:.82rem; }
 
-  /* ââ DASHBOARD ââ */
+  /* ── DASHBOARD ── */
   .page { max-width:1100px; margin:0 auto; padding:20px 16px 40px; }
   .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
   .header-title { font-size:1.35rem; font-weight:800; }
@@ -55,7 +55,7 @@
   .btn:hover { border-color:var(--blue); color:var(--blue); }
   .btn-sm { padding:5px 11px; font-size:.78rem; }
 
-  /* ââ DATE BAR ââ */
+  /* ── DATE BAR ── */
   .date-bar {
     background:var(--surface); border:1px solid var(--border); border-radius:14px;
     padding:10px 14px; display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:18px;
@@ -83,7 +83,7 @@
   }
   .date-display strong { color:var(--text); }
 
-  /* ââ ALERTS ââ */
+  /* ── ALERTS ── */
   .alerts { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
   .alert { border-radius:12px; padding:10px 15px; display:flex; align-items:center; gap:10px; font-size:.84rem; font-weight:500; border:1px solid; }
   .alert-red    { background:rgba(239,68,68,.1);  border-color:rgba(239,68,68,.4);  color:#fca5a5; }
@@ -93,7 +93,7 @@
   .alert-pill   { margin-left:auto; padding:3px 10px; border-radius:8px; font-size:.75rem; font-weight:700; white-space:nowrap; background:rgba(255,255,255,.07); }
   .error-banner { background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.4); color:#fde047; border-radius:12px; padding:10px 16px; font-size:.84rem; margin-bottom:14px; }
 
-  /* ââ SECTION HEADER ââ */
+  /* ── SECTION HEADER ── */
   .section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; margin-top:22px; }
   .section-title { font-size:.9rem; font-weight:700; }
   .section-sub   { font-size:.74rem; color:var(--muted); }
@@ -102,7 +102,7 @@
   .badge-green { background:rgba(34,197,94,.15);  border-color:rgba(34,197,94,.4);  color:#86efac; }
   .badge-blue  { background:rgba(59,130,246,.15); border-color:rgba(59,130,246,.4); color:#93c5fd; }
 
-  /* ââ METRICS GRID ââ */
+  /* ── METRICS GRID ── */
   .metrics-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:11px; margin-bottom:18px; }
   .metric-card {
     background:var(--surface); border:1px solid var(--border); border-radius:16px;
@@ -120,7 +120,7 @@
   .text-green { color:var(--green); } .text-red { color:var(--red); }
   .text-yellow { color:var(--yellow); } .text-blue { color:#93c5fd; } .text-white { color:var(--text); }
 
-  /* ââ CONFIG PANEL ââ */
+  /* ── CONFIG PANEL ── */
   .config-toggle-bar {
     background:var(--surface); border:1px solid var(--border); border-radius:14px;
     padding:12px 18px; margin-bottom:0; display:flex; align-items:center;
@@ -175,7 +175,7 @@
   .config-total-line { font-size:.82rem; color:var(--muted); display:flex; align-items:center; gap:7px; }
   .config-total-pct { font-weight:800; font-size:.94rem; }
 
-  /* ââ EGRESO CARDS ââ */
+  /* ── EGRESO CARDS ── */
   .egreso-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:11px; margin-bottom:18px; }
   .egreso-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 15px; }
   .egreso-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
@@ -200,7 +200,7 @@
   .card-warn .egreso-value { color:var(--yellow); }
   .card-ok   .egreso-value { color:var(--green); }
 
-  /* ââ BUDGET TABLE ââ */
+  /* ── BUDGET TABLE ── */
   .budget-summary { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:18px; }
   .budget-table-hdr {
     padding:11px 18px; border-bottom:1px solid var(--border);
@@ -225,7 +225,7 @@
   .bt-var.exceso { background:rgba(239,68,68,.12);  color:var(--red); }
   .bt-var.warn   { background:rgba(234,179,8,.12);  color:var(--yellow); }
 
-  /* ââ SALES TABLE ââ */
+  /* ── SALES TABLE ── */
   .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:18px; }
   .table-hdr  { padding:13px 17px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
   .table-title { font-size:.84rem; font-weight:700; }
@@ -238,7 +238,7 @@
   .tag-green { background:rgba(34,197,94,.15);  color:var(--green); }
   .tag-blue  { background:rgba(59,130,246,.15); color:#93c5fd; }
 
-  /* ââ MODEL COST EDITOR ââ */
+  /* ── MODEL COST EDITOR ── */
   .model-editor-panel {
     background:var(--surface); border:1px solid var(--blue); border-top:none;
     border-radius:0 0 14px 14px; padding:18px 20px 22px; margin-bottom:18px; display:none;
@@ -270,7 +270,7 @@
   .model-del-btn { background:transparent; border:1px solid transparent; color:var(--muted); font-size:.78rem; cursor:pointer; padding:3px 6px; border-radius:6px; transition:all .12s; flex-shrink:0; line-height:1; }
   .model-del-btn:hover { border-color:var(--red); color:var(--red); background:rgba(239,68,68,.08); }
 
-  /* ââ STOCK ââ */
+  /* ── STOCK ── */
   .stock-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:4px; }
   .stock-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; }
   .stock-card-name { font-size:.78rem; font-weight:700; color:var(--text); line-height:1.3; }
@@ -290,7 +290,7 @@
   .add-model-form input:focus { outline:none; border-color:var(--blue); }
   .add-model-form select { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:5px 9px; font-size:.8rem; cursor:pointer; }
 
-  /* ââ LOADING ââ */
+  /* ── LOADING ── */
   #loadingOverlay {
     position:fixed; inset:0; background:rgba(15,23,42,.85); display:none;
     align-items:center; justify-content:center; flex-direction:column; gap:12px; z-index:100;
@@ -298,10 +298,10 @@
   .spinner { font-size:2.5rem; animation:spin 1s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
 
-  /* ââ FOOTER ââ */
+  /* ── FOOTER ── */
   .footer { text-align:center; font-size:.71rem; color:var(--border); margin-top:28px; }
 
-  /* ââ RESPONSIVE ââ */
+  /* ── RESPONSIVE ── */
   @media (max-width:700px) {
     .metrics-grid { grid-template-columns:1fr 1fr; }
     .egreso-grid  { grid-template-columns:1fr 1fr; }
@@ -319,15 +319,15 @@
 </head>
 <body>
 
-<!-- âââââââââââââââââââââââââââââââââââââââ LOGIN âââââââââââââââââââââââââââââââââââââââ -->
+<!-- ═══════════════════════════════════════ LOGIN ═══════════════════════════════════════ -->
 <div id="loginScreen">
-  <div class="login-logo">ð±</div>
+  <div class="login-logo">🌱</div>
   <div>
     <div class="login-title">Dashboard Acrule</div>
     <div class="login-sub-title" style="margin-top:6px">Dashboard financiero en tiempo real</div>
   </div>
   <div class="login-card">
-    <p class="login-desc">IniciÃ¡ sesiÃ³n con tu cuenta de Google para ver los datos de tu planilla en tiempo real.</p>
+    <p class="login-desc">Iniciá sesión con tu cuenta de Google para ver los datos de tu planilla en tiempo real.</p>
     <button class="btn-google" id="btnLogin" onclick="login()" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -341,34 +341,34 @@
   </div>
 </div>
 
-<!-- âââââââââââââââââââââââââââââââââââââââ LOADING âââââââââââââââââââââââââââââââââââââââ -->
+<!-- ═══════════════════════════════════════ LOADING ═══════════════════════════════════════ -->
 <div id="loadingOverlay">
-  <div class="spinner">ð</div>
-  <p style="color:var(--muted);font-size:.88rem">Cargando datos de la planillaâ¦</p>
+  <div class="spinner">🌀</div>
+  <p style="color:var(--muted);font-size:.88rem">Cargando datos de la planilla…</p>
 </div>
 
-<!-- âââââââââââââââââââââââââââââââââââââââ DASHBOARD âââââââââââââââââââââââââââââââââââââââ -->
+<!-- ═══════════════════════════════════════ DASHBOARD ═══════════════════════════════════════ -->
 <div id="dashboardScreen" style="display:none">
   <div class="page">
 
     <!-- HEADER -->
     <div class="header">
       <div>
-        <div class="header-title">ð± Dashboard Acrule</div>
+        <div class="header-title">🌱 Dashboard Acrule</div>
         <div class="header-sub">
           <span class="dot"></span>
-          <span id="lastUpdatedTime">Cargandoâ¦</span>
-          Â· Auto-refresh cada 5 min
+          <span id="lastUpdatedTime">Cargando…</span>
+          · Auto-refresh cada 5 min
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-sm" onclick="fetchAll(false)">ð Actualizar</button>
+        <button class="btn btn-sm" onclick="fetchAll(false)">🔄 Actualizar</button>
       </div>
     </div>
 
     <!-- DATE BAR -->
     <div class="date-bar">
-      <label>ð PerÃ­odo:</label>
+      <label>📅 Período:</label>
       <div class="quick-btns">
         <button class="qbtn" onclick="selectPeriodo(this,'hoy')">Hoy</button>
         <button class="qbtn active" onclick="selectPeriodo(this,'semana')">Esta semana</button>
@@ -394,89 +394,89 @@
     <!-- METRICS -->
     <div class="section-hdr">
       <div>
-        <div class="section-title">Resumen del perÃ­odo</div>
-        <div class="section-sub" id="periodSubtitle">â</div>
+        <div class="section-title">Resumen del período</div>
+        <div class="section-sub" id="periodSubtitle">—</div>
       </div>
-      <span class="badge" id="ebitdaBadge">â</span>
+      <span class="badge" id="ebitdaBadge">—</span>
     </div>
     <div class="metrics-grid">
       <div class="metric-card" style="--accent-color:#3b82f6" id="metCobrado">
-        <div class="metric-label">ð° FacturaciÃ³n</div>
+        <div class="metric-label">💰 Facturación</div>
         <div class="metric-value text-white">$0</div>
         <div class="metric-sub">0 ventas</div>
       </div>
       <div class="metric-card" style="--accent-color:#22c55e" id="metComisiones">
-        <div class="metric-label">ðª Comisiones</div>
+        <div class="metric-label">🏪 Comisiones</div>
         <div class="metric-value text-white">$0</div>
-        <div class="metric-sub">0% de la facturaciÃ³n</div>
+        <div class="metric-sub">0% de la facturación</div>
       </div>
       <div class="metric-card" style="--accent-color:#a855f7" id="metInversores">
-        <div class="metric-label">ð¿ Pago inversores</div>
+        <div class="metric-label">🌿 Pago inversores</div>
         <div class="metric-value text-white">$0</div>
-        <div class="metric-sub">0% de la facturaciÃ³n</div>
+        <div class="metric-sub">0% de la facturación</div>
       </div>
       <div class="metric-card" style="--accent-color:#0ea5e9" id="metCostoPropio">
-        <div class="metric-label">ð¦ Costo propio</div>
+        <div class="metric-label">📦 Costo propio</div>
         <div class="metric-value text-white">$0</div>
-        <div class="metric-sub">0% de la facturaciÃ³n</div>
+        <div class="metric-sub">0% de la facturación</div>
       </div>
       <div class="metric-card" style="--accent-color:#22c55e" id="metQueda">
-        <div class="metric-label">ð Queda libre</div>
+        <div class="metric-label">📊 Queda libre</div>
         <div class="metric-value text-green">$0</div>
         <div class="metric-sub">Margen bruto 0%</div>
       </div>
       <div class="metric-card" style="--accent-color:#f97316" id="metAds">
-        <div class="metric-label">ð£ Ads gastados</div>
+        <div class="metric-label">📣 Ads gastados</div>
         <div class="metric-value text-white">$0</div>
-        <div class="metric-sub positive">â</div>
+        <div class="metric-sub positive">—</div>
       </div>
       <div class="metric-card" style="--accent-color:#14b8a6" id="metEbitda">
-        <div class="metric-label">ð EBITDA del perÃ­odo</div>
+        <div class="metric-label">🏆 EBITDA del período</div>
         <div class="metric-value text-green">$0</div>
-        <div class="metric-sub positive">â</div>
+        <div class="metric-sub positive">—</div>
       </div>
     </div>
 
     <!-- CONFIG PANEL TOGGLE -->
     <div class="config-toggle-bar" id="configToggleBar" onclick="toggleConfig()">
       <div class="config-toggle-left">
-        <span style="font-size:1.15rem">ð¯</span>
+        <span style="font-size:1.15rem">🎯</span>
         <div>
-          <div class="config-toggle-label">LÃ­mites de presupuesto por porcentaje</div>
-          <div class="config-toggle-sub" id="configSubtitle">ConfigurÃ¡ el % mÃ¡ximo de cada categorÃ­a sobre lo cobrado</div>
+          <div class="config-toggle-label">Límites de presupuesto por porcentaje</div>
+          <div class="config-toggle-sub" id="configSubtitle">Configurá el % máximo de cada categoría sobre lo cobrado</div>
         </div>
       </div>
-      <span class="config-toggle-arrow" id="configArrow">â¼</span>
+      <span class="config-toggle-arrow" id="configArrow">▼</span>
     </div>
     <div class="config-panel" id="configPanel">
       <div class="config-intro">
-        DefinÃ­ cuÃ¡nto puede representar cada gasto como % de lo cobrado en el perÃ­odo.
-        El sistema compara el % real vs tu lÃ­mite y muestra la varianza â verde si estÃ¡s a favor, rojo si te pasaste.
+        Definí cuánto puede representar cada gasto como % de lo cobrado en el período.
+        El sistema compara el % real vs tu límite y muestra la varianza — verde si estás a favor, rojo si te pasaste.
       </div>
       <div class="config-grid" id="configGrid"></div>
       <div class="config-footer">
         <div class="config-total-line">
-          Total presupuestado: <span class="config-total-pct" id="configTotalPct">â</span>
+          Total presupuestado: <span class="config-total-pct" id="configTotalPct">—</span>
           <span id="configTotalNote" style="font-size:.75rem"></span>
         </div>
-        <div style="font-size:.74rem;color:var(--muted)">Los cambios se guardan automÃ¡ticamente â</div>
+        <div style="font-size:.74rem;color:var(--muted)">Los cambios se guardan automáticamente ↑</div>
       </div>
     </div>
 
     <!-- MODEL COST EDITOR -->
     <div class="config-toggle-bar" id="modelToggleBar" onclick="toggleModelEditor()" style="margin-top:10px">
       <div class="config-toggle-left">
-        <span style="font-size:1.15rem">ð±</span>
+        <span style="font-size:1.15rem">🌱</span>
         <div>
           <div class="config-toggle-label">Costos por modelo</div>
-          <div class="config-toggle-sub" id="modelSubtitle">EditÃ¡ el costo de inversiÃ³n de cada modelo vendido</div>
+          <div class="config-toggle-sub" id="modelSubtitle">Editá el costo de inversión de cada modelo vendido</div>
         </div>
       </div>
-      <span class="config-toggle-arrow" id="modelArrow">â¼</span>
+      <span class="config-toggle-arrow" id="modelArrow">▼</span>
     </div>
     <div class="model-editor-panel" id="modelPanel">
       <div class="config-intro">
-        EditÃ¡ el costo y el tipo de cada modelo. <strong>ð¿ Pago a inversores</strong> = plata que se devuelve semanalmente a los inversores (huertas 12P, 24P, 32P, upsell). <strong>ð¦ Costo propio</strong> = plata que se guarda para reponer stock (minis, Torre 1.0, insumos). PodÃ©s agregar o eliminar modelos. Los cambios se guardan al hacer <strong>ð¾ Guardar costos</strong>.
+        Editá el costo y el tipo de cada modelo. <strong>🌿 Pago a inversores</strong> = plata que se devuelve semanalmente a los inversores (huertas 12P, 24P, 32P, upsell). <strong>📦 Costo propio</strong> = plata que se guarda para reponer stock (minis, Torre 1.0, insumos). Podés agregar o eliminar modelos. Los cambios se guardan al hacer <strong>💾 Guardar costos</strong>.
       </div>
       <div class="model-grid" id="modelGrid"></div>
       <div id="modelSaveBar" style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:0 4px"></div>
@@ -488,18 +488,18 @@
         <div class="section-title">Desglose de egresos</div>
         <div class="section-sub">% real vs % presupuestado sobre lo cobrado</div>
       </div>
-      <span class="badge badge-green" id="egresosBadge">â</span>
+      <span class="badge badge-green" id="egresosBadge">—</span>
     </div>
     <div class="egreso-grid" id="egresoGrid"></div>
 
     <!-- BUDGET TABLE -->
     <div class="section-hdr">
-      <div class="section-title">Vista consolidada Â· % real vs presupuesto</div>
+      <div class="section-title">Vista consolidada · % real vs presupuesto</div>
     </div>
     <div class="budget-summary">
       <div class="budget-table-hdr">
-        <div>CategorÃ­a</div>
-        <div>EjecuciÃ³n</div>
+        <div>Categoría</div>
+        <div>Ejecución</div>
         <div style="text-align:right">Monto</div>
         <div style="text-align:right">Real %</div>
         <div style="text-align:right">Ppto %</div>
@@ -511,43 +511,43 @@
     <!-- STOCK -->
     <div class="section-hdr" style="margin-top:22px">
       <div>
-        <div class="section-title">ð¦ Stock disponible</div>
-        <div class="section-sub" id="stockSubtitle">ConfigurÃ¡ el stock inicial en el Editor de Modelos</div>
+        <div class="section-title">📦 Stock disponible</div>
+        <div class="section-sub" id="stockSubtitle">Configurá el stock inicial en el Editor de Modelos</div>
       </div>
     </div>
     <div id="stockSection"></div>
 
     <!-- SALES TABLE -->
     <div class="section-hdr">
-      <div class="section-title">Ventas del perÃ­odo</div>
+      <div class="section-title">Ventas del período</div>
       <span class="badge badge-blue" id="ventasBadge">0 ventas</span>
     </div>
     <div class="table-wrap">
       <div class="table-hdr">
         <div class="table-title">Detalle de ventas</div>
-        <div style="font-size:.74rem;color:var(--muted)">Ãltimas 25 registradas</div>
+        <div style="font-size:.74rem;color:var(--muted)">Últimas 25 registradas</div>
       </div>
       <table>
         <thead>
           <tr>
             <th>Fecha</th><th>Modelo</th><th>Cobrado</th>
-            <th>Costo inv.</th><th>ComisiÃ³n</th><th>% Com.</th><th>Queda libre</th><th>Estado</th>
+            <th>Costo inv.</th><th>Comisión</th><th>% Com.</th><th>Queda libre</th><th>Estado</th>
           </tr>
         </thead>
         <tbody id="ventasTbody">
-          <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Cargandoâ¦</td></tr>
+          <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="footer">Acrule HidropÃ³nica 2026 Â· Dashboard en tiempo real Â· Datos desde Google Sheets</div>
+    <div class="footer">Acrule Hidropónica 2026 · Dashboard en tiempo real · Datos desde Google Sheets</div>
   </div>
 </div>
 
 <script>
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    CONSTANTES
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 const CLIENT_ID        = '444981171857-dcpdntfn4nsn3noeh1d3m7qjpmjjvfve.apps.googleusercontent.com';
 const SPREADSHEET_ID   = '1nKABP2ZvKKlFDdvUCvQ8jhgmbu-l1tErBz_w4ZZFGnM';
 const REFRESH_MS       = 5 * 60 * 1000;
@@ -637,19 +637,19 @@ function saveCustomModelos() {
 let CUSTOM_MODELOS = loadCustomModelos();
 
 const BUDGET_CATS = [
-  { id:'pagoInversores', icon:'ð¿', label:'Pago a inversores (12P, 24P, 32Pâ¦)', color:'#a855f7' },
-  { id:'costoPropio',    icon:'ð¦', label:'Costo propio (minis, Torre, NFT)',    color:'#0ea5e9' },
-  { id:'comisiones',     icon:'ðª', label:'Comisiones ML/WEB',                  color:'#22c55e' },
-  { id:'envios',         icon:'ð', label:'EnvÃ­os',                              color:'#3b82f6' },
-  { id:'impuestos',      icon:'ð', label:'Impuestos',                           color:'#14b8a6' },
-  { id:'anuncios',       icon:'ð£', label:'Anuncios (Meta + Google)',             color:'#f97316' },
-  { id:'sueldos',        icon:'ð·', label:'Sueldos',                              color:'#8b5cf6' },
-  { id:'otrosGastos',    icon:'ð§', label:'Otros gastos',                        color:'#eab308' },
+  { id:'pagoInversores', icon:'🌿', label:'Pago a inversores (12P, 24P, 32P…)', color:'#a855f7' },
+  { id:'costoPropio',    icon:'📦', label:'Costo propio (minis, Torre, NFT)',    color:'#0ea5e9' },
+  { id:'comisiones',     icon:'🏪', label:'Comisiones ML/WEB',                  color:'#22c55e' },
+  { id:'envios',         icon:'🚚', label:'Envíos',                              color:'#3b82f6' },
+  { id:'impuestos',      icon:'📋', label:'Impuestos',                           color:'#14b8a6' },
+  { id:'anuncios',       icon:'📣', label:'Anuncios (Meta + Google)',             color:'#f97316' },
+  { id:'sueldos',        icon:'👷', label:'Sueldos',                              color:'#8b5cf6' },
+  { id:'otrosGastos',    icon:'🔧', label:'Otros gastos',                        color:'#eab308' },
 ];
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   CONFIGURACIÃN (localStorage)
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN (localStorage)
+═══════════════════════════════════════════════════════════════ */
 const DEFAULT_CONFIG = {
   budgetPct: {
     pagoInversores: 35,
@@ -680,9 +680,9 @@ function saveConfig(cfg) {
   localStorage.setItem('acrule_config', JSON.stringify(cfg));
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    STATE
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 let tokenClient  = null;
 let accessToken  = null;
 let allVentas    = [];
@@ -694,9 +694,9 @@ let currentPeriodo = 'semana';
 let dateFrom = null;
 let dateTo   = null;
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    DATE HELPERS
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -737,9 +737,9 @@ function inRange(dateStr, from, to) {
   return dateStr >= from && dateStr <= to;
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    PARSERS
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function parseDate(str) {
   if (!str) return null;
   str = String(str).trim();
@@ -751,9 +751,9 @@ function parseDate(str) {
       return `${y.padStart(4,'20')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
     }
   }
-  // DD-MMM o D-MMM en espaÃ±ol (ej: "30-mar", "1-abr", "2-abr")
+  // DD-MMM o D-MMM en español (ej: "30-mar", "1-abr", "2-abr")
   const ES_MONTHS = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
-  const mAbr = str.match(/^(\d{1,2})[- ]([a-zÃ¡Ã©Ã­Ã³Ãº]{3,})/i);
+  const mAbr = str.match(/^(\d{1,2})[- ]([a-záéíóú]{3,})/i);
   if (mAbr) {
     const day = mAbr[1].padStart(2,'0');
     const monKey = mAbr[2].toLowerCase().substring(0,3);
@@ -763,8 +763,8 @@ function parseDate(str) {
       return `${yr}-${String(monNum).padStart(2,'0')}-${day}`;
     }
   }
-  // MMM-DD o MMM DD en inglÃ©s/espaÃ±ol
-  const mMmm = str.match(/^([a-zÃ¡Ã©Ã­Ã³Ãº]{3,})[- ](\d{1,2})/i);
+  // MMM-DD o MMM DD en inglés/español
+  const mMmm = str.match(/^([a-záéíóú]{3,})[- ](\d{1,2})/i);
   if (mMmm) {
     const monKey = mMmm[1].toLowerCase().substring(0,3);
     const monNum = ES_MONTHS[monKey];
@@ -774,7 +774,7 @@ function parseDate(str) {
       return `${yr}-${String(monNum).padStart(2,'0')}-${day}`;
     }
   }
-  // YYYY-MM-DD o cualquier otro formato ISO â pasa directo
+  // YYYY-MM-DD o cualquier otro formato ISO → pasa directo
   return str;
 }
 
@@ -798,7 +798,7 @@ function getCostoModelo(modelo) {
     const nk = norm(k);
     if (m.includes(nk) || nk.includes(m)) return v;
   }
-  return null; // desconocido â aparece en editor de modelos
+  return null; // desconocido → aparece en editor de modelos
 }
 
 function getTipoModelo(modelo) {
@@ -824,10 +824,10 @@ function parseVentas(rows) {
   const iFecha    = col('fecha')   ?? 0;
   const iHora     = col('hora');
   const iModelo   = col('modelo')  ?? 2;
-  // FacturaciÃ³n = lo que paga el cliente. Columna J (Ã­ndice 9) es la fuente de verdad.
-  // Se busca primero por nombre, luego se cae a Ã­ndice 9 (columna J).
+  // Facturación = lo que paga el cliente. Columna J (índice 9) es la fuente de verdad.
+  // Se busca primero por nombre, luego se cae a índice 9 (columna J).
   const iPrecio   = col('lo que paga') ?? col('paga') ?? col('factura') ?? col('facturac') ?? col('cobro') ?? col('cobrado') ?? 9;
-  // Comisiones: buscar 'comisi' para capturar "Comisiones", "ComisiÃ³n", etc.
+  // Comisiones: buscar 'comisi' para capturar "Comisiones", "Comisión", etc.
   const iComision = col('comisi') ?? col('comision') ?? 4;
   return data
     .filter(r => r[iFecha] && r[iPrecio])
@@ -847,7 +847,7 @@ function parseEgresos(rows) {
   const iFecha     = col('fecha')   ?? 0;
   // "Categoria" en la planilla real
   const iCategoria = col('categor') ?? col('categoria') ?? col('tipo') ?? 1;
-  // Columna O (Ã­ndice 14) = "Total neto" = monto real del egreso
+  // Columna O (índice 14) = "Total neto" = monto real del egreso
   const iMonto     = col('total neto') ?? col('neto') ?? col('monto') ?? col('importe') ?? col('total') ?? col('valor') ?? col('egreso') ?? col('ingreso') ?? col('precio') ?? 14;
   return data
     .filter(r => r[iFecha] && r[iMonto] && parseNum(r[iMonto]) !== 0)
@@ -858,9 +858,9 @@ function parseEgresos(rows) {
     }));
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    FETCH SHEETS
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 async function fetchSheet(sheetName) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}`;
   const res = await fetch(url, { headers:{ Authorization:`Bearer ${accessToken}` } });
@@ -892,9 +892,9 @@ async function fetchAll(silent=false) {
   }
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    CALCULATIONS
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function calcPeriod() {
   const range = getPeriodRange(currentPeriodo);
   const { from, to, days } = range;
@@ -911,7 +911,7 @@ function calcPeriod() {
     const costoInv  = costoRaw ?? 0;
     if (costoRaw===null) modelosDesc.push(v.modelo);
     const tipo = getTipoModelo(v.modelo);
-    // Margen bruto por venta = cobrado - costo modelo - comisiÃ³n
+    // Margen bruto por venta = cobrado - costo modelo - comisión
     const margenBruto = v.precio - costoInv - v.comision;
 
     cobrado         += v.precio;
@@ -922,8 +922,8 @@ function calcPeriod() {
   }
   const totalInversores = totalPagoInversores + totalCostoPropio; // suma total para backward-compat
 
-  // ââ Filtros de categorÃ­a en Egresos ââââââââââââââââââââââââââââââââââââââââ
-  // NormalizaciÃ³n: quita acentos y pasa a minÃºsculas para comparaciÃ³n robusta
+  // ── Filtros de categoría en Egresos ────────────────────────────────────────────────────────────────────────────
+  // Normalización: quita acentos y pasa a minúsculas para comparación robusta
   const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const esAnuncio   = c => { const n=norm(c); return n.includes('anunci') || n==='ads' || n.includes('publicidad') || n.includes('marketing') || n.includes('meta') || n.includes('google'); };
@@ -939,7 +939,7 @@ function calcPeriod() {
   const sueldosRow   = egresosP.filter(e => esSueldo(e.categoria)).reduce((s,e)=>s+e.monto, 0);
   const totalSueldos = sueldosRow; // solo de la hoja Egresos, sin fallback estimado
 
-  // "Otros gastos" = explÃ­citamente marcado como "Otros Gastos/Varios" en Egresos
+  // "Otros gastos" = explícitamente marcado como "Otros Gastos/Varios" en Egresos
   // (no catch-all, para evitar absorber gastos mal categorizados)
   const totalOtros = egresosP
     .filter(e => {
@@ -949,8 +949,8 @@ function calcPeriod() {
     })
     .reduce((s,e)=>s+e.monto, 0);
 
-  // MÃ©tricas derivadas
-  // "Queda libre" = cobrado - costos modelo - comisiones - envÃ­os - impuestos
+  // Métricas derivadas
+  // "Queda libre" = cobrado - costos modelo - comisiones - envíos - impuestos
   const quedaLibreTotal = cobrado - totalInversores - totalComisiones - totalEnvios - totalImpuestos;
   const burnFijos       = totalSueldos + totalOtros;
   const ebitda          = quedaLibreTotal - burnFijos - totalAnuncios;
@@ -958,14 +958,14 @@ function calcPeriod() {
   // Budget categories con varianza
   const base = cobrado;
   const categorias = [
-    { id:'pagoInversores', icon:'ð¿', nombre:'Pago a inversores', sub:'Se devuelve a inversores (12P, 24P, 32Pâ¦)', monto:totalPagoInversores, color:'#a855f7' },
-    { id:'costoPropio',    icon:'ð¦', nombre:'Costo propio',      sub:'Reponer stock: minis, Torre, insumos',      monto:totalCostoPropio,    color:'#0ea5e9' },
-    { id:'comisiones',     icon:'ðª', nombre:'Comisiones',        sub:'MercadoLibre / WEB',                        monto:totalComisiones,     color:'#22c55e' },
-    { id:'envios',         icon:'ð', nombre:'EnvÃ­os',            sub:'LogÃ­stica y envÃ­o',                         monto:totalEnvios,         color:'#3b82f6' },
-    { id:'impuestos',      icon:'ð', nombre:'Impuestos',         sub:'AFIP / IIBB / Fiscal',                      monto:totalImpuestos,      color:'#14b8a6' },
-    { id:'anuncios',       icon:'ð£', nombre:'Anuncios',          sub:'Meta + Google Ads',                         monto:totalAnuncios,       color:'#f97316' },
-    { id:'sueldos',        icon:'ð·', nombre:'Sueldos',           sub:'Personal',                                  monto:totalSueldos,        color:'#8b5cf6' },
-    { id:'otrosGastos',    icon:'ð§', nombre:'Otros gastos',      sub:'Materia prima + varios',                    monto:totalOtros,          color:'#eab308' },
+    { id:'pagoInversores', icon:'🌿', nombre:'Pago a inversores', sub:'Se devuelve a inversores (12P, 24P, 32P…)', monto:totalPagoInversores, color:'#a855f7' },
+    { id:'costoPropio',    icon:'📦', nombre:'Costo propio',      sub:'Reponer stock: minis, Torre, insumos',      monto:totalCostoPropio,    color:'#0ea5e9' },
+    { id:'comisiones',     icon:'🏪', nombre:'Comisiones',        sub:'MercadoLibre / WEB',                        monto:totalComisiones,     color:'#22c55e' },
+    { id:'envios',         icon:'🚚', nombre:'Envíos',            sub:'Logística y envío',                         monto:totalEnvios,         color:'#3b82f6' },
+    { id:'impuestos',      icon:'📋', nombre:'Impuestos',         sub:'AFIP / IIBB / Fiscal',                      monto:totalImpuestos,      color:'#14b8a6' },
+    { id:'anuncios',       icon:'📣', nombre:'Anuncios',          sub:'Meta + Google Ads',                         monto:totalAnuncios,       color:'#f97316' },
+    { id:'sueldos',        icon:'👷', nombre:'Sueldos',           sub:'Personal',                                  monto:totalSueldos,        color:'#8b5cf6' },
+    { id:'otrosGastos',    icon:'🔧', nombre:'Otros gastos',      sub:'Materia prima + varios',                    monto:totalOtros,          color:'#eab308' },
   ].map(cat => {
     const realPct   = base > 0 ? (cat.monto / base * 100) : 0;
     const budgetPct = config.budgetPct[cat.id] || 0;
@@ -985,9 +985,9 @@ function calcPeriod() {
            modelosDesc:[...new Set(modelosDesc)], ventasPorModelo };
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    FORMAT
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function fmt(n) {
   if (!n||isNaN(n)) return '$0';
   return '$'+Math.round(Math.abs(n)).toLocaleString('es-AR');
@@ -998,9 +998,9 @@ function fmtSigned(n) {
   return n<0 ? `-${s}` : s;
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    RENDER
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function renderDashboard() {
   const data = calcPeriod();
   const { range, cobrado, totalInversores, totalPagoInversores, totalCostoPropio, ebitda, categorias, filasVentas, cantidadVentas, ventasPorModelo } = data;
@@ -1010,19 +1010,19 @@ function renderDashboard() {
   const quedaLibre = cobrado - totalInversores - com - env - imp;
 
   // Subtitle + badge
-  document.getElementById('periodSubtitle').textContent = `${range.label} Â· ${range.days} dÃ­a${range.days!==1?'s':''}`;
+  document.getElementById('periodSubtitle').textContent = `${range.label} · ${range.days} día${range.days!==1?'s':''}`;
   const eb = document.getElementById('ebitdaBadge');
-  eb.textContent = ebitda >= 0 ? 'â EBITDA positivo' : 'â EBITDA negativo';
+  eb.textContent = ebitda >= 0 ? '✅ EBITDA positivo' : '❌ EBITDA negativo';
   eb.className   = `badge ${ebitda >= 0 ? 'badge-green' : 'badge-red'}`;
 
   // Metrics
-  _setCard('metCobrado',    fmt(cobrado),  `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el perÃ­odo`);
-  _setCard('metComisiones', fmt(com),      `${cobrado>0?(com/cobrado*100).toFixed(1):0}% de la facturaciÃ³n`);
-  _setCard('metInversores',  fmt(totalPagoInversores), `${cobrado>0?(totalPagoInversores/cobrado*100).toFixed(1):0}% de la facturaciÃ³n`);
-  _setCard('metCostoPropio', fmt(totalCostoPropio),    `${cobrado>0?(totalCostoPropio/cobrado*100).toFixed(1):0}% de la facturaciÃ³n`);
+  _setCard('metCobrado',    fmt(cobrado),  `${cantidadVentas} venta${cantidadVentas!==1?'s':''} en el período`);
+  _setCard('metComisiones', fmt(com),      `${cobrado>0?(com/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metInversores',  fmt(totalPagoInversores), `${cobrado>0?(totalPagoInversores/cobrado*100).toFixed(1):0}% de la facturación`);
+  _setCard('metCostoPropio', fmt(totalCostoPropio),    `${cobrado>0?(totalCostoPropio/cobrado*100).toFixed(1):0}% de la facturación`);
   const quedaClass = quedaLibre>=0?'positive':'negative';
   _setCard('metQueda', fmtSigned(quedaLibre), `Margen bruto ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
-  _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? 'â  Sobre presupuesto':'Dentro del presupuesto',
+  _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? '⚠ Sobre presupuesto':'Dentro del presupuesto',
            data.totalAnuncios > cobrado*0.088 ? 'negative':'');
 
   const ebitdaCard = document.getElementById('metEbitda');
@@ -1030,7 +1030,7 @@ function renderDashboard() {
     ebitdaCard.querySelector('.metric-value').textContent  = fmtSigned(ebitda);
     ebitdaCard.querySelector('.metric-value').className   = `metric-value ${ebitda>=0?'text-green':'text-red'}`;
     const sub = ebitdaCard.querySelector('.metric-sub');
-    sub.textContent = `${ebitda>=0?'â':'â'} ${ebitda>=0?'Positivo':'Negativo'} Â· ${cobrado>0?(ebitda/cobrado*100).toFixed(1):0}% del cobrado`;
+    sub.textContent = `${ebitda>=0?'✅':'❌'} ${ebitda>=0?'Positivo':'Negativo'} · ${cobrado>0?(ebitda/cobrado*100).toFixed(1):0}% del cobrado`;
     sub.className   = `metric-sub ${ebitda>=0?'positive':'negative'}`;
   }
 
@@ -1042,7 +1042,7 @@ function renderDashboard() {
   // Egreso badge
   const over = categorias.filter(c=>c.varianza<-0.1&&c.budgetPct>0).length;
   const eb2 = document.getElementById('egresosBadge');
-  eb2.textContent = over>0 ? `${over} sobre el lÃ­mite` : 'â Todos dentro del lÃ­mite';
+  eb2.textContent = over>0 ? `${over} sobre el límite` : '✅ Todos dentro del límite';
   eb2.className   = `badge ${over>0?'badge-red':'badge-green'}`;
 
   updateConfigSubtitle(categorias);
@@ -1054,8 +1054,8 @@ function renderDashboard() {
   const mSub = document.getElementById('modelSubtitle');
   if (mSub && !modelEditorOpen) {
     mSub.textContent = desconocidos.length > 0
-      ? `â  ${desconocidos.length} modelo${desconocidos.length>1?'s':''} sin costo â hacÃ© clic para configurar`
-      : 'Costos de modelos configurados â';
+      ? `⚠ ${desconocidos.length} modelo${desconocidos.length>1?'s':''} sin costo — hacé clic para configurar`
+      : 'Costos de modelos configurados ✅';
   }
 }
 
@@ -1072,23 +1072,23 @@ function renderAlertas(categorias) {
   for (const cat of categorias) {
     if (!cat.budgetPct) continue;
     if (cat.varianza < -0.1) {
-      alerts.push({ type:'red', icon:'ð¨', title:`${cat.nombre} sobre el lÃ­mite`,
-        body:`Ejecutado ${cat.realPct.toFixed(1)}% â lÃ­mite ${cat.budgetPct}%`,
+      alerts.push({ type:'red', icon:'🚨', title:`${cat.nombre} sobre el límite`,
+        body:`Ejecutado ${cat.realPct.toFixed(1)}% — límite ${cat.budgetPct}%`,
         pill:`-${Math.abs(cat.varianza).toFixed(1)}%` });
     } else if (cat.varianza <= 2) {
-      alerts.push({ type:'yellow', icon:'â ï¸', title:`${cat.nombre} cerca del lÃ­mite`,
+      alerts.push({ type:'yellow', icon:'⚠️', title:`${cat.nombre} cerca del límite`,
         body:`Quedan ${cat.varianza.toFixed(1)}pp libres del ${cat.budgetPct}% presupuestado`,
         pill:`${cat.varianza.toFixed(1)}% libre` });
     }
   }
   if (!alerts.length) {
-    alerts.push({ type:'green', icon:'â', title:'Todos los egresos dentro del presupuesto',
-      body:'Cada categorÃ­a estÃ¡ por debajo de su lÃ­mite configurado.', pill:'OK' });
+    alerts.push({ type:'green', icon:'✅', title:'Todos los egresos dentro del presupuesto',
+      body:'Cada categoría está por debajo de su límite configurado.', pill:'OK' });
   }
   section.innerHTML = alerts.map(a=>`
     <div class="alert alert-${a.type}">
       <span class="alert-icon">${a.icon}</span>
-      <div><strong>${a.title}</strong> â ${a.body}</div>
+      <div><strong>${a.title}</strong> — ${a.body}</div>
       <div class="alert-pill">${a.pill}</div>
     </div>`).join('');
 }
@@ -1103,10 +1103,10 @@ function renderEgresoCards(categorias) {
     const cardCls = isOver ? 'card-over' : isWarn ? 'card-warn' : 'card-ok';
     const barClr  = isOver ? '#ef4444' : isWarn ? '#eab308' : cat.color;
     const varCls  = isOver ? 'varianza-exceso' : isWarn ? 'varianza-warning' : 'varianza-favor';
-    const varLbl  = cat.varianza>=0.1 ? `+${cat.varianza.toFixed(1)}% â a favor`
-                  : cat.varianza<=-0.1 ? `${cat.varianza.toFixed(1)}% ð¨ exceso`
-                  : 'â en lÃ­mite';
-    const subtitle= isOver ? 'â  Sobre lÃ­mite' : isWarn ? 'â  Cerca del lÃ­mite' : cat.sub;
+    const varLbl  = cat.varianza>=0.1 ? `+${cat.varianza.toFixed(1)}% ✅ a favor`
+                  : cat.varianza<=-0.1 ? `${cat.varianza.toFixed(1)}% 🚨 exceso`
+                  : '≈ en límite';
+    const subtitle= isOver ? '⚠ Sobre límite' : isWarn ? '⚠ Cerca del límite' : cat.sub;
     return `
       <div class="egreso-card ${cardCls}">
         <div class="egreso-header">
@@ -1122,12 +1122,12 @@ function renderEgresoCards(categorias) {
             <div class="progress-bar-fill" style="width:${barW}%;background:${barClr}"></div>
           </div>
           <div class="progress-labels">
-            <span>LÃ­mite: ${cat.budgetPct}% (${fmt(allVentas.length&&cat.budgetPct?0:0)})</span>
+            <span>Límite: ${cat.budgetPct}% (${fmt(allVentas.length&&cat.budgetPct?0:0)})</span>
             <span style="color:${barClr}">${cat.realPct.toFixed(1)}%</span>
           </div>
         </div>
         <div class="varianza-row">
-          <span class="varianza-label">Varianza vs lÃ­mite:</span>
+          <span class="varianza-label">Varianza vs límite:</span>
           <span class="varianza-pill ${varCls}">${varLbl}</span>
         </div>
       </div>`;
@@ -1151,7 +1151,7 @@ function renderBudgetTable(categorias, cobrado) {
         <div class="bt-num">${fmt(cat.monto)}</div>
         <div class="bt-pct" style="color:${barClr}">${cat.realPct.toFixed(1)}%</div>
         <div class="bt-pct" style="color:var(--muted)">${cat.budgetPct}%</div>
-        <div class="bt-var ${varCls}">${cat.varianza>=02'+':''}${cat.varianza.toFixed(1)}%</div>
+        <div class="bt-var ${varCls}">${cat.varianza>=0?'+':''}${cat.varianza.toFixed(1)}%</div>
       </div>`;
   }).join('');
 
@@ -1162,7 +1162,7 @@ function renderBudgetTable(categorias, cobrado) {
 
   body.innerHTML = rows + `
     <div class="budget-data-row total-row">
-      <div class="bt-cat">ð Total egresos</div>
+      <div class="bt-cat">📊 Total egresos</div>
       <div><div class="bt-bar-bg"><div class="bt-bar-fill" style="width:${totalBudPct>0?Math.min(totalRealPct/totalBudPct*100,100).toFixed(0):0}%;background:#3b82f6"></div></div></div>
       <div class="bt-num" style="color:var(--text);font-weight:700">${fmt(totalMonto)}</div>
       <div class="bt-pct" style="color:#93c5fd;font-weight:700">${totalRealPct.toFixed(1)}%</div>
@@ -1177,20 +1177,20 @@ function renderTablaVentas(filasVentas, cantidadVentas) {
   const tbody = document.getElementById('ventasTbody'); if(!tbody) return;
   const rows = filasVentas.slice(-25).reverse();
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No hay ventas registradas en este perÃ­odo.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No hay ventas registradas en este período.</td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(v => {
     const parts = (v.fecha||'').split('-');
-    const fechaFmt = parts.length===3 ? `${parts[2]}/${parts[1]}` : v.fecha||'â';
+    const fechaFmt = parts.length===3 ? `${parts[2]}/${parts[1]}` : v.fecha||'—';
     const costoNull = getCostoModelo(v.modelo)===null;
     const tag = costoNull
       ? `<span class="tag tag-blue">? Costo pendiente</span>`
-      : `<span class="tag tag-green">â OK</span>`;
+      : `<span class="tag tag-green">✓ OK</span>`;
     return `
       <tr>
         <td style="color:var(--muted)">${fechaFmt}</td>
-        <td>${v.modelo||'â'}</td>
+        <td>${v.modelo||'—'}</td>
         <td style="font-weight:600">${fmt(v.precio)}</td>
         <td style="color:var(--muted)">${fmt(v.costoInversor)}</td>
         <td style="color:var(--muted)">${fmt(v.comision)}</td>
@@ -1201,9 +1201,9 @@ function renderTablaVentas(filasVentas, cantidadVentas) {
   }).join('');
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    CONFIG PANEL
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function renderConfigGrid() {
   const grid = document.getElementById('configGrid'); if(!grid) return;
   const data = calcPeriod();
@@ -1228,7 +1228,7 @@ function renderConfigGrid() {
         </div>
         <div style="display:flex;justify-content:space-between;font-size:.71rem;margin-top:5px">
           <span style="color:var(--muted)">Real: <strong style="color:${varColor}">${realPct.toFixed(1)}%</strong></span>
-          <span style="color:${varColor};font-weight:700">${varPct>=0?'+':''}${varPct.toFixed(1)}% ${varPct>=0.1?'â':varPct<=-0.1?'ð¨':'â'}</span>
+          <span style="color:${varColor};font-weight:700">${varPct>=0?'+':''}${varPct.toFixed(1)}% ${varPct>=0.1?'✅':varPct<=-0.1?'🚨':'≈'}</span>
         </div>
       </div>`;
   }).join('');
@@ -1250,7 +1250,7 @@ function updateConfigTotal() {
   const el   = document.getElementById('configTotalPct');
   const note = document.getElementById('configTotalNote');
   if (el)   { el.textContent = total.toFixed(1)+'%'; el.style.color = total>100?'#ef4444':total>90?'#eab308':'#22c55e'; }
-  if (note) { note.textContent = total>100 ? 'â  Supera el 100%' : `Â· Margen libre: ${(100-total).toFixed(1)}%`; note.style.color = total>100?'#fca5a5':'var(--muted)'; }
+  if (note) { note.textContent = total>100 ? '⚠ Supera el 100%' : `· Margen libre: ${(100-total).toFixed(1)}%`; note.style.color = total>100?'#fca5a5':'var(--muted)'; }
 }
 
 function updateConfigSubtitle(categorias) {
@@ -1258,8 +1258,8 @@ function updateConfigSubtitle(categorias) {
   if (!sub || document.getElementById('configPanel').classList.contains('open')) return;
   const over = categorias.filter(c=>c.varianza<-0.1&&c.budgetPct>0).length;
   sub.textContent = over>0
-    ? `â  ${over} categorÃ­a${over>1?'s':''} sobre el lÃ­mite â hacÃ© clic para ajustar`
-    : 'â Todos los egresos dentro del presupuesto';
+    ? `⚠ ${over} categoría${over>1?'s':''} sobre el límite — hacé clic para ajustar`
+    : '✅ Todos los egresos dentro del presupuesto';
 }
 
 let configOpen = false;
@@ -1267,32 +1267,32 @@ function toggleConfig() {
   configOpen = !configOpen;
   document.getElementById('configPanel').classList.toggle('open', configOpen);
   document.getElementById('configToggleBar').classList.toggle('open', configOpen);
-  document.getElementById('configArrow').textContent = configOpen ? 'â²' : 'â¼';
+  document.getElementById('configArrow').textContent = configOpen ? '▲' : '▼';
   if (configOpen) renderConfigGrid();
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    MODEL COST EDITOR
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 let modelEditorOpen = false;
 function toggleModelEditor() {
   modelEditorOpen = !modelEditorOpen;
   document.getElementById('modelPanel').classList.toggle('open', modelEditorOpen);
   document.getElementById('modelToggleBar').classList.toggle('open', modelEditorOpen);
-  document.getElementById('modelArrow').textContent = modelEditorOpen ? 'â²' : 'â¼';
+  document.getElementById('modelArrow').textContent = modelEditorOpen ? '▲' : '▼';
   if (modelEditorOpen) renderModelGrid();
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    STOCK SECTION
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function renderStockSection(ventasPorModelo, range) {
   const el = document.getElementById('stockSection');
   const sub = document.getElementById('stockSubtitle');
   if (!el) return;
 
   const modelos = getModelosEnUso();
-  // Solo mostrar modelos con stock configurado o con ventas en el perÃ­odo
+  // Solo mostrar modelos con stock configurado o con ventas en el período
   const modelosMostrar = modelos.filter(m =>
     (STOCK_INICIAL[m] !== undefined && STOCK_INICIAL[m] > 0) ||
     ventasPorModelo[m]
@@ -1300,16 +1300,16 @@ function renderStockSection(ventasPorModelo, range) {
 
   if (modelosMostrar.length === 0) {
     el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;color:var(--muted);font-size:.84rem;text-align:center">
-      AbrÃ­ el <strong style="color:var(--text)">Editor de Modelos</strong> â ingresÃ¡ el stock inicial de cada modelo en el campo "ð¦ Stock inicial"
+      Abrí el <strong style="color:var(--text)">Editor de Modelos</strong> → ingresá el stock inicial de cada modelo en el campo "📦 Stock inicial"
     </div>`;
-    if (sub) sub.textContent = 'Sin stock configurado â usÃ¡ el Editor de Modelos';
+    if (sub) sub.textContent = 'Sin stock configurado — usá el Editor de Modelos';
     return;
   }
 
   const totalInicial  = modelosMostrar.reduce((s,m) => s + (STOCK_INICIAL[m]||0), 0);
   const totalVendidos = modelosMostrar.reduce((s,m) => s + (ventasPorModelo[m]||0), 0);
   const totalDisp     = totalInicial - totalVendidos;
-  if (sub) sub.textContent = `${totalDisp} unidades disponibles de ${totalInicial} Â· ${totalVendidos} vendidas en el perÃ­odo`;
+  if (sub) sub.textContent = `${totalDisp} unidades disponibles de ${totalInicial} · ${totalVendidos} vendidas en el período`;
 
   let html = `<div class="stock-grid">`;
   for (const m of modelosMostrar) {
@@ -1323,7 +1323,7 @@ function renderStockSection(ventasPorModelo, range) {
       <div class="stock-card">
         <div class="stock-card-name">${m}</div>
         <div class="stock-card-nums">
-                  <div class="stock-num-item">
+          <div class="stock-num-item">
             <span class="stock-num-label">Inicial</span>
             <span class="stock-num-val">${inicial}</span>
           </div>
@@ -1368,7 +1368,7 @@ function renderModelGrid() {
   };
 
   function rowHTML(nombre) {
-    const costo  = COSTOS_MODELo[nombre] ?? 0;
+    const costo  = COSTOS_MODELO[nombre] ?? 0;
     const tipo   = getTipoModelo(nombre);
     const isNew  = fromData.has(nombre) && !(nombre in DEFAULT_COSTOS_MODELO) && !CUSTOM_MODELOS.includes(nombre);
     const inData = fromData.has(nombre);
@@ -1376,13 +1376,13 @@ function renderModelGrid() {
     return `
       <div class="model-row ${isNew ? 'unknown' : ''}">
         <div class="model-info">
-          <div class="model-name">${nombre}${isCustom ? ' <span style="font-size:.62rem;color:var(--blue);vertical-align:middle">â¦ manual</span>' : ''}</div>
-          ${isNew    ? '<div class="model-name-unknown">â¢ Nuevo â asignÃ¡ un costo</div>' : ''}
-          ${inData && !isNew ? '<div style="font-size:.65rem;color:var(--green);margin-top:1px">â En ventas</div>' : ''}
-          ${!inData   ? '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">â Sin ventas aÃºn</div>' : ''}
+          <div class="model-name">${nombre}${isCustom ? ' <span style="font-size:.62rem;color:var(--blue);vertical-align:middle">❆ manual</span>' : ''}</div>
+          ${isNew    ? '<div class="model-name-unknown">⚠ Nuevo — asigná un costo</div>' : ''}
+          ${inData && !isNew ? '<div style="font-size:.65rem;color:var(--green);margin-top:1px">✓ En ventas</div>' : ''}
+          ${!inData   ? '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">— Sin ventas aún</div>' : ''}
           <div class="tipo-toggle">
-            <button class="tipo-btn ${tipo==='inversores'?'active-inv':''}" onclick="stageTipo(${JSON.stringify(nombre)},'inversores')">ð¿Inversores</button>
-            <button class="tipo-btn ${tipo!=='inversores'?'active-pro':''}" onclick="stageTipo(${JSON.stringify(nombre)},'propio')">ð¦ Propio</button>
+            <button class="tipo-btn ${tipo==='inversores'?'active-inv':''}" onclick="stageTipo(${JSON.stringify(nombre)},'inversores')">🌿 Inversores</button>
+            <button class="tipo-btn ${tipo!=='inversores'?'active-pro':''}" onclick="stageTipo(${JSON.stringify(nombre)},'propio')">📦 Propio</button>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
@@ -1392,18 +1392,18 @@ function renderModelGrid() {
               value="${costo}"
               oninput="stageCosto(${JSON.stringify(nombre)}, this.value)"
               onblur="onModelCost(${JSON.stringify(nombre)}, this.value)"
-              title="Costo del modelo â seguarda automÃ¡ticamente"
+              title="Costo del modelo — se guarda automáticamente"
             />
             <button class="model-del-btn" id="delbtn-${nombre.replace(/\s/g,'_')}"
-              onclick="requestDelete(${JSON.stringify(nombre)})" title="Eliminar modelo">ð</button>
+              onclick="requestDelete(${JSON.stringify(nombre)})" title="Eliminar modelo">🗑</button>
           </div>
           <div style="display:flex;align-items:center;gap:5px">
-            <span style="font-size:.68rem;color:var(--muted);white-space:nowrap">ð¦ Stock inicial:</span>
+            <span style="font-size:.68rem;color:var(--muted);white-space:nowrap">📦 Stock inicial:</span>
             <input class="model-cost-input" type="number" min="0" step="1" style="width:65px"
               value="${STOCK_INICIAL[nombre] !== undefined ? STOCK_INICIAL[nombre] : ''}"
-              placeholder="â"
+              placeholder="—"
               onchange="onStockChange(${JSON.stringify(nombre)}, this.value)"
-              title="Cantidad de unidades en stock al inicio del perÃ­odo"
+              title="Cantidad de unidades en stock al inicio del período"
             />
           </div>
         </div>
@@ -1412,48 +1412,48 @@ function renderModelGrid() {
 
   let html = '';
   if (grupos.inversores.length > 0) {
-    html += `<div class="tipo-section-hdr"><span style="color:#d8b4fe">ð¿</span> Pago a inversores â se devuelve semanalmente</div>`;
+    html += `<div class="tipo-section-hdr"><span style="color:#d8b4fe">🌿</span> Pago a inversores — se devuelve semanalmente</div>`;
     html += grupos.inversores.map(rowHTML).join('');
   }
   if (grupos.propio.length > 0) {
-    html += `<div class="tipo-section-hdr"><span style="color:#7dd3fc">ð¦</span> Costo propio â se guarda para reponer stock</div>`;
+    html += `<div class="tipo-section-hdr"><span style="color:#7dd3fc">📦</span> Costo propio — se guarda para reponer stock</div>`;
     html += grupos.propio.map(rowHTML).join('');
   }
 
   // Formulario para agregar modelo
   html += `
     <div class="add-model-form">
-      <span style="font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap">â Agregar modelo</span>
+      <span style="font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap">➕ Agregar modelo</span>
       <input type="text"   id="newModelNombre" placeholder="Nombre del modelo" />
       <input type="number" id="newModelCosto"  placeholder="Costo $" min="0" step="100" />
       <select id="newModelTipo">
-        <option value="inversores">ð¿ Inversores</option>
-        <option value="propio">ð¦ Propio</option>
+        <option value="inversores">🌿 Inversores</option>
+        <option value="propio">📦 Propio</option>
       </select>
       <button class="btn" onclick="confirmAddModelo()" style="background:var(--blue);border-color:var(--blue);color:#fff;padding:6px 14px;font-size:.8rem">Agregar</button>
     </div>`;
 
   grid.innerHTML = html;
 
-  // Footer con botÃ³n guardar
+  // Footer con botón guardar
   const saveBar = document.getElementById('modelSaveBar');
   if (saveBar) {
     saveBar.innerHTML = `
       <button class="btn" onclick="saveAllCostos()" style="background:var(--blue);border-color:var(--blue);color:#fff;padding:8px 18px;font-size:.84rem">
-        ð¾ Guardar costos
+        💾 Guardar costos
       </button>
-      <span id="modelSaveMsg" style="font-size:.78rem;color:var(--green);display:none">â Costos guardados</span>`;
+      <span id="modelSaveMsg" style="font-size:.78rem;color:var(--green);display:none">✅ Costos guardados</span>`;
   }
 
   // Subtitle
   const newCount = modelos.filter(m => fromData.has(m) && !(m in DEFAULT_COSTOS_MODELO) && !CUSTOM_MODELOS.includes(m)).length;
   const sub = document.getElementById('modelSubtitle');
   if (sub && !modelEditorOpen) sub.textContent = newCount > 0
-    ? `â  ${newCount} modelo${newCount>1?'s':''} nuevo${newCount>1?'s':''} sin costo asignado`
-    : `${modelos.filter(m=>fromData.has(m)).length} modelos configurados â`;
+    ? `⚠ ${newCount} modelo${newCount>1?'s':''} nuevo${newCount>1?'s':''} sin costo asignado`
+    : `${modelos.filter(m=>fromData.has(m)).length} modelos configurados ✅`;
 }
 
-// Actualiza en memoria mientras se escribe (sin guardar aÃºn)
+// Actualiza en memoria mientras se escribe (sin guardar aún)
 function stageCosto(nombre, val) {
   COSTOS_MODELO[nombre] = parseFloat(val) || 0;
 }
@@ -1466,7 +1466,7 @@ function stageTipo(nombre, tipo) {
   renderModelGrid();
 }
 
-// Pide confirmaciÃ³n inline (sin confirm() del browser)
+// Pide confirmación inline (sin confirm() del browser)
 function requestDelete(nombre) {
   const btnId = 'delbtn-' + nombre.replace(/\s/g,'_');
   const btn = document.getElementById(btnId);
@@ -1475,14 +1475,14 @@ function requestDelete(nombre) {
     deleteModelo(nombre);
   } else {
     btn.dataset.confirm = '1';
-    btn.textContent = 'Â¿SÃ­?';
+    btn.textContent = '¿Sí?';
     btn.style.background = 'rgba(239,68,68,.18)';
     btn.style.borderColor = 'var(--red)';
     btn.style.color = 'var(--red)';
     setTimeout(() => {
       if (btn && btn.dataset.confirm === '1') {
         btn.dataset.confirm = '';
-        btn.textContent = 'ð';
+        btn.textContent = '🗑';
         btn.style.background = '';
         btn.style.borderColor = '';
         btn.style.color = '';
@@ -1495,7 +1495,7 @@ function requestDelete(nombre) {
 function deleteModelo(nombre) {
   DELETED_MODELOS.add(nombre);
   saveDeletedModelos();
-  // Si era un modelo custom, tambiÃ©n lo removemos
+  // Si era un modelo custom, también lo removemos
   const idx = CUSTOM_MODELOS.indexOf(nombre);
   if (idx >= 0) { CUSTOM_MODELOS.splice(idx, 1); saveCustomModelos(); }
   // Limpiar de COSTOS y TIPOS
@@ -1512,7 +1512,7 @@ function confirmAddModelo() {
   const nombre = (document.getElementById('newModelNombre')?.value || '').trim();
   const costo  = parseFloat(document.getElementById('newModelCosto')?.value) || 0;
   const tipo   = document.getElementById('newModelTipo')?.value || 'propio';
-  if (!nombre) { alert('IngresÃ¡ un nombre para el modelo.'); return; }
+  if (!nombre) { alert('Ingresá un nombre para el modelo.'); return; }
   if (DELETED_MODELOS.has(nombre)) DELETED_MODELOS.delete(nombre); // restaurar si estaba eliminado
   if (!CUSTOM_MODELOS.includes(nombre)) { CUSTOM_MODELOS.push(nombre); saveCustomModelos(); }
   COSTOS_MODELO[nombre] = costo;   saveCostos();
@@ -1522,7 +1522,7 @@ function confirmAddModelo() {
   renderModelGrid();
 }
 
-// Guarda todos los costos a localStorage con confirmaciÃ³n visual
+// Guarda todos los costos a localStorage con confirmación visual
 function saveAllCostos() {
   saveCostos();
   saveTipos();
@@ -1541,15 +1541,15 @@ function onModelCost(nombre, val) {
   renderModelGrid();
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    PERIOD SELECTOR
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function selectPeriodo(btn, periodo) {
   currentPeriodo = periodo;
   document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const range = getPeriodRange(periodo);
-  document.getElementById('dateDisplay').innerHTML = `Mostrando: <strong>${range.label}</strong> Â· ${range.days} dÃ­a${range.days!==1?'s':''}`;
+  document.getElementById('dateDisplay').innerHTML = `Mostrando: <strong>${range.label}</strong> · ${range.days} día${range.days!==1?'s':''}`;
   if (allVentas.length||allEgresos.length) renderDashboard();
 }
 
@@ -1561,27 +1561,27 @@ function onRangeChange() {
   if (dateFrom && dateTo) {
     const d1 = new Date(dateFrom+'T00:00:00'), d2 = new Date(dateTo+'T00:00:00');
     const days = Math.round((d2-d1)/86400000)+1;
-    document.getElementById('dateDisplay').innerHTML = `Rango personalizado Â· <strong>${days} dÃ­as</strong>`;
+    document.getElementById('dateDisplay').innerHTML = `Rango personalizado · <strong>${days} días</strong>`;
   }
   if (allVentas.length||allEgresos.length) renderDashboard();
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    UI HELPERS
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function showLoading(show) {
   document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
 }
 function showError(msg) {
   const el = document.getElementById('errorBanner');
   if (!el) return;
-  if (msg) { el.textContent = 'â  ' + msg; el.style.display = 'block'; }
+  if (msg) { el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
   else      { el.style.display = 'none'; }
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    AUTH
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 function initAuth() {
   if (!window.google?.accounts?.oauth2) { setTimeout(initAuth, 300); return; }
   tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -1607,15 +1607,15 @@ function initAuth() {
 }
 
 function login() {
-  if (!tokenClient) { alert('Google Auth cargando, esperÃ¡ un momentoâ¦'); return; }
+  if (!tokenClient) { alert('Google Auth cargando, esperá un momento…'); return; }
   document.getElementById('btnLogin').disabled = true;
   document.getElementById('loginError').style.display = 'none';
   tokenClient.requestAccessToken();
 }
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════════════════════════════════
    INIT
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 window.addEventListener('load', () => {
   // Set default date range inputs (esta semana)
   const t   = new Date();
