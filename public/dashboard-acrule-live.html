@@ -327,7 +327,7 @@
     <div class="login-sub-title" style="margin-top:6px">Dashboard financiero en tiempo real</div>
   </div>
   <div class="login-card">
-    <p class="login-desc">Iniciá sesión con tu cuenta de Google para ver los datos de tu planilla en tiempo real.</p>
+    <p class="login-desc">Iniciá sesión con tu cuenta de Google para ver los datos de tu planilla en tiempo real.</p>
     <button class="btn-google" id="btnLogin" onclick="login()" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -592,18 +592,27 @@ function saveCostos() {
 }
 let COSTOS_MODELO = loadCostos();
 
-function loadStock() {
-  try { return JSON.parse(localStorage.getItem('acrule_stock') || '{}'); } catch { return {}; }
-}
-function saveStock() { localStorage.setItem('acrule_stock', JSON.stringify(STOCK_INICIAL)); }
-let STOCK_INICIAL = loadStock();
+// Fecha de referencia para el stock inicial (1 de Abril 2026)
+const STOCK_FECHA_INICIO = '2026-04-01';
 
-function onStockChange(nombre, val) {
-  const n = parseInt(val);
-  if (!isNaN(n) && n >= 0) STOCK_INICIAL[nombre] = n;
-  else delete STOCK_INICIAL[nombre];
-  saveStock();
-  renderDashboard();
+// Componentes físicos de stock con cantidades al 1-Abr-2026
+const COMPONENTES_STOCK = [
+  { id: 'mini',   label: 'Mini China',  emoji: '🌱', inicial: 2600 },
+  { id: '12p',    label: '12 Plantas',  emoji: '🌿', inicial: 915  },
+  { id: '28p',    label: '28P LED',     emoji: '💡', inicial: 61   },
+  { id: 'upsell', label: 'Upsell',      emoji: '⬆', inicial: 420  },
+];
+
+// Devuelve los componentes que consume 1 unidad de un modelo
+function getComponentesConsumo(modelo) {
+  const m = (modelo || '').toLowerCase().replace(/\s+/g, '');
+  if (m.includes('mini'))   return { mini: 1 };
+  if (m.includes('32'))     return { '12p': 1, upsell: 2 };
+  if (m.includes('24'))     return { '12p': 1, upsell: 1 };
+  if (m.includes('upsell')) return { upsell: 1 };
+  if (m.includes('28'))     return { '28p': 1 };
+  if (m.includes('12'))     return { '12p': 1 };
+  return {};
 }
 
 function loadTipos() {
@@ -922,7 +931,7 @@ function calcPeriod() {
   }
   const totalInversores = totalPagoInversores + totalCostoPropio; // suma total para backward-compat
 
-  // ── Filtros de categoría en Egresos ────────────────────────────────────────────────────────────────────────────
+  // ── Filtros de categoría en Egresos ────────────────────────────────────────
   // Normalización: quita acentos y pasa a minúsculas para comparación robusta
   const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -1048,7 +1057,6 @@ function renderDashboard() {
   updateConfigSubtitle(categorias);
   renderStockSection(ventasPorModelo, range);
   if (document.getElementById('configPanel').classList.contains('open')) renderConfigGrid();
-  if (document.getElementById('modelPanel').classList.contains('open')) renderModelGrid();
   // Actualizar subtitle del model editor si hay modelos nuevos
   const desconocidos = [...new Set(allVentas.map(v=>v.modelo).filter(m => m && !(m in COSTOS_MODELO)))];
   const mSub = document.getElementById('modelSubtitle');
@@ -1291,49 +1299,63 @@ function renderStockSection(ventasPorModelo, range) {
   const sub = document.getElementById('stockSubtitle');
   if (!el) return;
 
-  const modelos = getModelosEnUso();
-  // Solo mostrar modelos con stock configurado o con ventas en el período
-  const modelosMostrar = modelos.filter(m =>
-    (STOCK_INICIAL[m] !== undefined && STOCK_INICIAL[m] > 0) ||
-    ventasPorModelo[m]
-  );
-
-  if (modelosMostrar.length === 0) {
-    el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;color:var(--muted);font-size:.84rem;text-align:center">
-      Abrí el <strong style="color:var(--text)">Editor de Modelos</strong> → ingresá el stock inicial de cada modelo en el campo "📦 Stock inicial"
-    </div>`;
-    if (sub) sub.textContent = 'Sin stock configurado — usá el Editor de Modelos';
-    return;
+  // ── 1. Componentes consumidos en el PERÍODO SELECCIONADO (range.from → range.to) ──
+  const vendidosPeriodo = { mini: 0, '12p': 0, '28p': 0, upsell: 0 };
+  for (const [modelo, qty] of Object.entries(ventasPorModelo)) {
+    const comp = getComponentesConsumo(modelo);
+    for (const [c, n] of Object.entries(comp)) {
+      vendidosPeriodo[c] = (vendidosPeriodo[c] || 0) + n * qty;
+    }
   }
 
-  const totalInicial  = modelosMostrar.reduce((s,m) => s + (STOCK_INICIAL[m]||0), 0);
-  const totalVendidos = modelosMostrar.reduce((s,m) => s + (ventasPorModelo[m]||0), 0);
-  const totalDisp     = totalInicial - totalVendidos;
-  if (sub) sub.textContent = `${totalDisp} unidades disponibles de ${totalInicial} · ${totalVendidos} vendidas en el período`;
+  // ── 2. Componentes consumidos desde STOCK_FECHA_INICIO hasta range.to (stock actual) ──
+  const fechaRef = new Date(STOCK_FECHA_INICIO + 'T00:00:00');
+  const fechaFin = new Date(range.to + 'T23:59:59');
+  const consumidoTotal = { mini: 0, '12p': 0, '28p': 0, upsell: 0 };
+  for (const v of allVentas) {
+    if (!v.fecha) continue;
+    const fd = new Date(v.fecha + (v.fecha.length === 10 ? 'T12:00:00' : ''));
+    if (fd >= fechaRef && fd <= fechaFin) {
+      const comp = getComponentesConsumo(v.modelo);
+      for (const [c, n] of Object.entries(comp)) {
+        consumidoTotal[c] = (consumidoTotal[c] || 0) + n;
+      }
+    }
+  }
 
+  // ── 3. Formatear fecha de fin para mostrar ──
+  const [yy, mm, dd] = range.to.split('-');
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const labelFin = `${parseInt(dd)} ${meses[parseInt(mm)-1]}`;
+
+  // ── 4. Cards de componentes ──
+  let totalActual = 0, totalInicial = 0;
   let html = `<div class="stock-grid">`;
-  for (const m of modelosMostrar) {
-    const inicial    = STOCK_INICIAL[m] || 0;
-    const vendidos   = ventasPorModelo[m] || 0;
-    const disponible = inicial - vendidos;
-    const pct        = inicial > 0 ? Math.max(0, Math.min(100, (disponible / inicial) * 100)) : 0;
-    const clr        = disponible <= 0 ? '#ef4444' : disponible <= Math.max(1, Math.ceil(inicial * 0.2)) ? '#eab308' : '#22c55e';
-    const estado     = disponible <= 0 ? 'Sin stock' : disponible <= Math.max(1, Math.ceil(inicial * 0.2)) ? 'Stock bajo' : 'OK';
+  for (const comp of COMPONENTES_STOCK) {
+    const inicial   = comp.inicial;
+    const consumido = consumidoTotal[comp.id] || 0;
+    const periodo   = vendidosPeriodo[comp.id] || 0;
+    const actual    = inicial - consumido;
+    totalInicial   += inicial;
+    totalActual    += Math.max(0, actual);
+    const pct    = inicial > 0 ? Math.max(0, Math.min(100, (actual / inicial) * 100)) : 0;
+    const clr    = actual <= 0 ? '#ef4444' : actual <= Math.max(1, Math.ceil(inicial * 0.15)) ? '#eab308' : '#22c55e';
+    const estado = actual <= 0 ? 'Sin stock' : actual <= Math.max(1, Math.ceil(inicial * 0.15)) ? 'Stock bajo' : 'OK';
     html += `
       <div class="stock-card">
-        <div class="stock-card-name">${m}</div>
+        <div class="stock-card-name">${comp.emoji} ${comp.label}</div>
         <div class="stock-card-nums">
           <div class="stock-num-item">
-            <span class="stock-num-label">Inicial</span>
+            <span class="stock-num-label">Inicial (1 Abr)</span>
             <span class="stock-num-val">${inicial}</span>
           </div>
           <div class="stock-num-item">
-            <span class="stock-num-label">Vendidos</span>
-            <span class="stock-num-val" style="color:#f87171">-${vendidos}</span>
+            <span class="stock-num-label">Vendidos período</span>
+            <span class="stock-num-val" style="color:#f87171">${periodo > 0 ? '-'+periodo : '0'}</span>
           </div>
           <div class="stock-num-item stock-disp">
-            <span class="stock-num-label">Disponible</span>
-            <span class="stock-num-val" style="color:${clr};font-weight:700">${disponible}</span>
+            <span class="stock-num-label">Stock al ${labelFin}</span>
+            <span class="stock-num-val" style="color:${clr};font-weight:700">${actual}</span>
           </div>
         </div>
         <div class="stock-bar-wrap">
@@ -1343,7 +1365,38 @@ function renderStockSection(ventasPorModelo, range) {
       </div>`;
   }
   html += `</div>`;
+
+  // ── 5. Tabla de modelos vendidos en el período ──
+  const modelosConVentas = Object.entries(ventasPorModelo)
+    .filter(([, q]) => q > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (modelosConVentas.length > 0) {
+    html += `<div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+        <thead><tr style="background:rgba(255,255,255,.04)">
+          <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600">Modelo</th>
+          <th style="text-align:right;padding:8px 12px;color:var(--muted);font-weight:600">Und. vendidas</th>
+          <th style="text-align:right;padding:8px 12px;color:var(--muted);font-weight:600">Componentes usados</th>
+        </tr></thead><tbody>`;
+    for (const [modelo, qty] of modelosConVentas) {
+      const comp = getComponentesConsumo(modelo);
+      const compParts = Object.entries(comp).map(([c, n]) => {
+        const info = COMPONENTES_STOCK.find(x => x.id === c);
+        return `${info ? info.emoji : ''} ${n > 1 ? n+'× ' : ''}${info ? info.label : c}`;
+      });
+      const compStr = compParts.length > 0 ? compParts.join(' + ') : '—';
+      html += `<tr style="border-top:1px solid var(--border)">
+        <td style="padding:7px 12px;color:var(--text)">${modelo}</td>
+        <td style="padding:7px 12px;text-align:right;color:var(--text);font-weight:600">${qty}</td>
+        <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:.74rem">${compStr}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
   el.innerHTML = html;
+  if (sub) sub.textContent = `Stock al ${labelFin}: ${totalActual.toLocaleString()} disponibles de ${totalInicial.toLocaleString()} iniciales`;
 }
 
 function getModelosEnUso() {
@@ -1376,7 +1429,7 @@ function renderModelGrid() {
     return `
       <div class="model-row ${isNew ? 'unknown' : ''}">
         <div class="model-info">
-          <div class="model-name">${nombre}${isCustom ? ' <span style="font-size:.62rem;color:var(--blue);vertical-align:middle">❆ manual</span>' : ''}</div>
+          <div class="model-name">${nombre}${isCustom ? ' <span style="font-size:.62rem;color:var(--blue);vertical-align:middle">✦ manual</span>' : ''}</div>
           ${isNew    ? '<div class="model-name-unknown">⚠ Nuevo — asigná un costo</div>' : ''}
           ${inData && !isNew ? '<div style="font-size:.65rem;color:var(--green);margin-top:1px">✓ En ventas</div>' : ''}
           ${!inData   ? '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">— Sin ventas aún</div>' : ''}
@@ -1396,15 +1449,6 @@ function renderModelGrid() {
             />
             <button class="model-del-btn" id="delbtn-${nombre.replace(/\s/g,'_')}"
               onclick="requestDelete(${JSON.stringify(nombre)})" title="Eliminar modelo">🗑</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px">
-            <span style="font-size:.68rem;color:var(--muted);white-space:nowrap">📦 Stock inicial:</span>
-            <input class="model-cost-input" type="number" min="0" step="1" style="width:65px"
-              value="${STOCK_INICIAL[nombre] !== undefined ? STOCK_INICIAL[nombre] : ''}"
-              placeholder="—"
-              onchange="onStockChange(${JSON.stringify(nombre)}, this.value)"
-              title="Cantidad de unidades en stock al inicio del período"
-            />
           </div>
         </div>
       </div>`;
@@ -1441,8 +1485,7 @@ function renderModelGrid() {
     saveBar.innerHTML = `
       <button class="btn" onclick="saveAllCostos()" style="background:var(--blue);border-color:var(--blue);color:#fff;padding:8px 18px;font-size:.84rem">
         💾 Guardar costos
-      </button>
-      <span id="modelSaveMsg" style="font-size:.78rem;color:var(--green);display:none">✅ Costos guardados</span>`;
+      </button>`;
   }
 
   // Subtitle
@@ -1451,6 +1494,21 @@ function renderModelGrid() {
   if (sub && !modelEditorOpen) sub.textContent = newCount > 0
     ? `⚠ ${newCount} modelo${newCount>1?'s':''} nuevo${newCount>1?'s':''} sin costo asignado`
     : `${modelos.filter(m=>fromData.has(m)).length} modelos configurados ✅`;
+}
+
+// Toast de confirmación visual (esquina inferior derecha)
+function showToast(msg) {
+  let t = document.getElementById('_toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast';
+    t.style.cssText = 'position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:.84rem;color:var(--text);box-shadow:0 4px 18px rgba(0,0,0,.45);z-index:9999;opacity:0;transition:opacity .22s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2400);
 }
 
 // Actualiza en memoria mientras se escribe (sin guardar aún)
@@ -1526,19 +1584,13 @@ function confirmAddModelo() {
 function saveAllCostos() {
   saveCostos();
   saveTipos();
-  renderDashboard();
-  const msg = document.getElementById('modelSaveMsg');
-  if (msg) {
-    msg.style.display = 'inline';
-    setTimeout(() => { msg.style.display = 'none'; }, 2500);
-  }
+  showToast('✅ Costos guardados');
 }
 
 function onModelCost(nombre, val) {
   COSTOS_MODELO[nombre] = parseFloat(val) || 0;
   saveCostos();
-  renderDashboard();
-  renderModelGrid();
+  showToast('💾 Costo guardado');
 }
 
 /* ═══════════════════════════════════════════════════════════════
