@@ -588,7 +588,11 @@ function loadCostos() {
   } catch { return { ...DEFAULT_COSTOS_MODELO }; }
 }
 function saveCostos() {
-  localStorage.setItem('acrule_costos', JSON.stringify(COSTOS_MODELO));
+  try {
+    localStorage.setItem('acrule_costos', JSON.stringify(COSTOS_MODELO));
+  } catch(e) {
+    console.error('[acrule] saveCostos failed:', e);
+  }
 }
 let COSTOS_MODELO = loadCostos();
 
@@ -597,21 +601,24 @@ const STOCK_FECHA_INICIO = '2026-04-01';
 
 // Componentes físicos de stock con cantidades al 1-Abr-2026
 const COMPONENTES_STOCK = [
-  { id: 'mini',   label: 'Mini China',  emoji: '🌱', inicial: 2600 },
-  { id: '12p',    label: '12 Plantas',  emoji: '🌿', inicial: 915  },
-  { id: '28p',    label: '28P LED',     emoji: '💡', inicial: 61   },
-  { id: 'upsell', label: 'Upsell',      emoji: '⬆', inicial: 420  },
+  { id: 'mini_nac',   label: 'Mini Nacional', emoji: '🏠', inicial: 244,  nota: 'Gris + Beige' },
+  { id: 'mini_china', label: 'Mini China',    emoji: '🌱', inicial: 2600, nota: 'No a la venta aún', noVenta: true },
+  { id: '12p',        label: '12 Plantas',    emoji: '🌿', inicial: 915  },
+  { id: '28p',        label: '28P LED',       emoji: '💡', inicial: 61   },
+  { id: 'upsell',     label: 'Upsell',        emoji: '⬆',    inicial: 420  },
+  { id: 'torre',      label: 'Torre 1.0',     emoji: '🏡', inicial: 41   },
 ];
 
 // Devuelve los componentes que consume 1 unidad de un modelo
 function getComponentesConsumo(modelo) {
   const m = (modelo || '').toLowerCase().replace(/\s+/g, '');
-  if (m.includes('mini'))   return { mini: 1 };
-  if (m.includes('32'))     return { '12p': 1, upsell: 2 };
-  if (m.includes('24'))     return { '12p': 1, upsell: 1 };
-  if (m.includes('upsell')) return { upsell: 1 };
-  if (m.includes('28'))     return { '28p': 1 };
-  if (m.includes('12'))     return { '12p': 1 };
+  if (m.includes('mini'))             return { mini_nac: 1 };    // mini gris y beige → stock nacional
+  if (m.includes('torre') || m.includes('1.0')) return { torre: 1 };
+  if (m.includes('32'))               return { '12p': 1, upsell: 2 };
+  if (m.includes('24'))               return { '12p': 1, upsell: 1 };
+  if (m.includes('upsell'))           return { upsell: 1 };
+  if (m.includes('28'))               return { '28p': 1 };
+  if (m.includes('12'))               return { '12p': 1 };
   return {};
 }
 
@@ -1300,7 +1307,7 @@ function renderStockSection(ventasPorModelo, range) {
   if (!el) return;
 
   // ── 1. Componentes consumidos en el PERÍODO SELECCIONADO (range.from → range.to) ──
-  const vendidosPeriodo = { mini: 0, '12p': 0, '28p': 0, upsell: 0 };
+  const vendidosPeriodo = { mini_nac: 0, mini_china: 0, '12p': 0, '28p': 0, upsell: 0, torre: 0 };
   for (const [modelo, qty] of Object.entries(ventasPorModelo)) {
     const comp = getComponentesConsumo(modelo);
     for (const [c, n] of Object.entries(comp)) {
@@ -1311,7 +1318,7 @@ function renderStockSection(ventasPorModelo, range) {
   // ── 2. Componentes consumidos desde STOCK_FECHA_INICIO hasta range.to (stock actual) ──
   const fechaRef = new Date(STOCK_FECHA_INICIO + 'T00:00:00');
   const fechaFin = new Date(range.to + 'T23:59:59');
-  const consumidoTotal = { mini: 0, '12p': 0, '28p': 0, upsell: 0 };
+  const consumidoTotal = { mini_nac: 0, mini_china: 0, '12p': 0, '28p': 0, upsell: 0, torre: 0 };
   for (const v of allVentas) {
     if (!v.fecha) continue;
     const fd = new Date(v.fecha + (v.fecha.length === 10 ? 'T12:00:00' : ''));
@@ -1333,6 +1340,27 @@ function renderStockSection(ventasPorModelo, range) {
   let html = `<div class="stock-grid">`;
   for (const comp of COMPONENTES_STOCK) {
     const inicial   = comp.inicial;
+    const nota      = comp.nota || null;
+
+    if (comp.noVenta) {
+      // Componente no disponible para la venta aún → card especial, sin consumo
+      html += `
+      <div class="stock-card" style="opacity:.72;border-style:dashed">
+        <div class="stock-card-name">${comp.emoji} ${comp.label}</div>
+        <div class="stock-card-nums">
+          <div class="stock-num-item">
+            <span class="stock-num-label">En depósito</span>
+            <span class="stock-num-val">${inicial}</span>
+          </div>
+        </div>
+        <div class="stock-bar-wrap">
+          <div class="stock-bar-fill" style="width:100%;background:#475569"></div>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:3px;font-weight:600">⏸ No a la venta aún</div>
+      </div>`;
+      continue;
+    }
+
     const consumido = consumidoTotal[comp.id] || 0;
     const periodo   = vendidosPeriodo[comp.id] || 0;
     const actual    = inicial - consumido;
@@ -1343,7 +1371,7 @@ function renderStockSection(ventasPorModelo, range) {
     const estado = actual <= 0 ? 'Sin stock' : actual <= Math.max(1, Math.ceil(inicial * 0.15)) ? 'Stock bajo' : 'OK';
     html += `
       <div class="stock-card">
-        <div class="stock-card-name">${comp.emoji} ${comp.label}</div>
+        <div class="stock-card-name">${comp.emoji} ${comp.label}${nota ? `<span style="font-size:.62rem;color:var(--muted);font-weight:400;margin-left:4px">(${nota})</span>` : ''}</div>
         <div class="stock-card-nums">
           <div class="stock-num-item">
             <span class="stock-num-label">Inicial (1 Abr)</span>
@@ -1370,7 +1398,6 @@ function renderStockSection(ventasPorModelo, range) {
   const modelosConVentas = Object.entries(ventasPorModelo)
     .filter(([, q]) => q > 0)
     .sort((a, b) => b[1] - a[1]);
-
   if (modelosConVentas.length > 0) {
     html += `<div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
       <table style="width:100%;border-collapse:collapse;font-size:.8rem">
@@ -1382,7 +1409,7 @@ function renderStockSection(ventasPorModelo, range) {
     for (const [modelo, qty] of modelosConVentas) {
       const comp = getComponentesConsumo(modelo);
       const compParts = Object.entries(comp).map(([c, n]) => {
-        const info = COMPONENTES_STOCK.find(x => x.id === c);
+        const info = COMPOLNETES_STOCK.find(x => x.id === c);
         return `${info ? info.emoji : ''} ${n > 1 ? n+'× ' : ''}${info ? info.label : c}`;
       });
       const compStr = compParts.length > 0 ? compParts.join(' + ') : '—';
@@ -1398,7 +1425,6 @@ function renderStockSection(ventasPorModelo, range) {
   el.innerHTML = html;
   if (sub) sub.textContent = `Stock al ${labelFin}: ${totalActual.toLocaleString()} disponibles de ${totalInicial.toLocaleString()} iniciales`;
 }
-
 function getModelosEnUso() {
   const fromData = [...new Set(allVentas.map(v => v.modelo).filter(Boolean))];
   const base = fromData.length === 0 ? Object.keys(DEFAULT_COSTOS_MODELO) : fromData;
@@ -1512,8 +1538,14 @@ function showToast(msg) {
 }
 
 // Actualiza en memoria mientras se escribe (sin guardar aún)
+// Autosave debounce para costos
+let _costosSaveTimer = null;
+
+// Actualiza en memoria mientras se escribe y guarda automáticamente tras 800ms de pausa
 function stageCosto(nombre, val) {
   COSTOS_MODELO[nombre] = parseFloat(val) || 0;
+  clearTimeout(_costosSaveTimer);
+  _costosSaveTimer = setTimeout(saveCostos, 800);
 }
 
 // Actualiza el tipo de un modelo y guarda
@@ -1677,6 +1709,12 @@ window.addEventListener('load', () => {
   document.getElementById('dateTo').value   = toDateStr(t);
   initAuth();
 });
+
+  // Guardar costos y tipos antes de cerrar la pestaña
+  window.addEventListener('beforeunload', () => {
+    saveCostos();
+    saveTipos();
+  });
 </script>
 </body>
 </html>
