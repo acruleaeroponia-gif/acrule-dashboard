@@ -517,6 +517,15 @@
     </div>
     <div id="stockSection"></div>
 
+    <!-- BUDGET COMPARISON -->
+    <div class="section-hdr" style="margin-top:24px">
+      <div>
+        <div class="section-title">📊 Presupuesto 2026 vs. Real</div>
+        <div class="section-sub">Comparación de unidades y facturación según período seleccionado</div>
+      </div>
+    </div>
+    <div id="pptoSection"></div>
+
     <!-- SALES TABLE -->
     <div class="section-hdr">
       <div class="section-title">Ventas del período</div>
@@ -595,6 +604,95 @@ function saveCostos() {
   }
 }
 let COSTOS_MODELO = loadCostos();
+
+/* ─── PRESUPUESTO 2026 ──────────────────────────────────────────────────────
+   Volumen y facturación mensual (con IVA) por categoría de producto.
+   Claves numéricas = mes (1=Ene … 12=Dic). Solo se definen meses con valor > 0.
+───────────────────────────────────────────────────────────────────────────── */
+const PPTO_2026 = {
+  volumen: {
+    'Mini Huerta Nacional':        {1:21,2:38,3:50,4:15},
+    'Mini Huerta China':           {4:40,5:85,6:120,7:150,8:160,9:180,10:175,11:200,12:170},
+    'Huerta PVC':                  {1:78,2:44},
+    'Huerta Nacional':             {1:2,2:10,3:15,4:5,5:5,6:5},
+    'Huerta China 12P':            {2:33,3:80,4:80,5:90,6:95,7:80,8:90,9:90,10:100,11:130,12:120},
+    'Huerta China Luces 28P':      {2:10,3:15,4:15,5:15,6:5},
+    'Upsell China 3 Módulos':      {2:4,3:10,4:20,5:25,6:35,7:35,8:40,9:60,10:80,11:90,12:70},
+    'Huerta Emprendedores Brasil':  {1:2,2:6,4:5,5:8,6:8,7:10,8:10,9:12,10:15,11:15,12:10},
+  },
+  facturacion: {
+    'Mini Huerta Nacional':        {1:2553600,2:4620800,3:6080000,4:1824000},
+    'Mini Huerta China':           {4:8756000,5:18606500,6:26268000,7:32835000,8:35024000,9:39402000,10:38307500,11:43780000,12:37213000},
+    'Huerta PVC':                  {1:18447000,2:10406000},
+    'Huerta Nacional':             {1:937600,2:4688000,3:7032000,4:2344000,5:2344000,6:2344000},
+    'Huerta China 12P':            {2:11513700,3:27912000,4:27912000,5:31401000,6:33145500,7:27912000,8:31401000,9:31401000,10:34890000,11:45357000,12:41868000},
+    'Huerta China Luces 28P':      {2:5489000,3:8233500,4:8233500,5:8233500,6:2744500},
+    'Upsell China 3 Módulos':      {2:395600,3:989000,4:1978000,5:2472500,6:3461500,7:3461500,8:3956000,9:5934000,10:7912000,11:8901000,12:6923000},
+    'Huerta Emprendedores Brasil':  {1:6797800,2:20393400,4:16994500,5:27191200,6:27191200,7:33989000,8:33989000,9:40786800,10:50983500,11:50983500,12:33989000},
+  },
+};
+
+// Mapeo explícito de modelos de venta → categoría de presupuesto
+const PPTO_MODEL_MAP = {
+  '13 Huerta Acr 12P':     'Huerta China 12P',
+  '14 Huerta Acr 24P':     'Huerta Nacional',
+  '14 Huerta Acr 32P':     'Huerta Emprendedores Brasil',
+  '16 Huerta Acr Led 28P': 'Huerta China Luces 28P',
+  '17 Upsell 12P':         'Upsell China 3 Módulos',
+  '32 Mini Baige':         'Mini Huerta Nacional',
+  '32 Mini Gris':          'Mini Huerta Nacional',
+  '33 Torre 1.0':          null,   // producto nuevo, sin presupuesto 2026
+  '31 NFT 288':            'Huerta PVC',
+};
+
+// Fallback fuzzy para modelos custom no listados en PPTO_MODEL_MAP
+function getPptoCat(modelo) {
+  if (!modelo) return null;
+  if (PPTO_MODEL_MAP.hasOwnProperty(modelo)) return PPTO_MODEL_MAP[modelo];
+  const m = modelo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if (m.includes('mini') && m.includes('china')) return 'Mini Huerta China';
+  if (m.includes('mini'))   return 'Mini Huerta Nacional';
+  if (m.includes('led') || /28\s*p/.test(m)) return 'Huerta China Luces 28P';
+  if (m.includes('upsell')) return 'Upsell China 3 Módulos';
+  if (m.includes('brasil') || m.includes('emprendedor') || /32\s*p/.test(m)) return 'Huerta Emprendedores Brasil';
+  if (/24\s*p/.test(m))     return 'Huerta Nacional';
+  if (m.includes('pvc') || m.includes('nft')) return 'Huerta PVC';
+  if (/12\s*p/.test(m))     return 'Huerta China 12P';
+  return null;
+}
+
+// Prorratea el presupuesto mensual para el rango de fechas seleccionado
+function getPptoPeriodo(from, to) {
+  const d1 = new Date(from + 'T00:00:00');
+  const d2 = new Date(to   + 'T23:59:59');
+  const cats = Object.keys(PPTO_2026.volumen);
+  const vol = {}, fac = {};
+  cats.forEach(c => { vol[c] = 0; fac[c] = 0; });
+
+  // Iterar cada mes que se superpone con el período
+  const ym1 = d1.getFullYear() *12 + d1.getMonth();
+  const ym2 = d2.getFullYear() * 12 + d2.getMonth();
+  for (let ym = ym1; ym <= ym2; ym++) {
+    const yr = Math.floor(ym / 12), mo = ym % 12; // mo = 0-indexed
+    if (yr !== 2026) continue; // presupuesto solo cubre 2026
+    const mNum = mo + 1; // 1-indexed
+    const mStart = new Date(yr, mo, 1);
+    const mEnd   = new Date(yr, mo + 1, 0); // último día del mes
+    const daysInMonth = mEnd.getDate();
+    const overlapStart = new Date(Math.max(d1, mStart));
+    const overlapEnd   = new Date(Math.min(d2, mEnd));
+    const overlapDays  = Math.round((overlapEnd - overlapStart) / 86400000) + 1;
+    if (overlapDays <= 0) continue;
+    const frac = overlapDays / daysInMonth;
+    for (const c of cats) {
+      vol[c] += (PPTO_2026.volumen[c][mNum]    || 0) * frac;
+      fac[c] += (PPTO_2026.facturacion[c][mNum] || 0) * frac;
+    }
+  }
+  return { vol, fac };
+}
+
+
 
 // Fecha de referencia para el stock inicial (1 de Abril 2026)
 const STOCK_FECHA_INICIO = '2026-04-01';
@@ -989,16 +1087,19 @@ function calcPeriod() {
     return { ...cat, realPct, budgetPct, varianza };
   });
 
-  // Conteo de unidades vendidas por modelo (1 fila = 1 unidad)
-  const ventasPorModelo = {};
+  // Conteo de unidades y facturación por modelo
+  const ventasPorModelo = {}, ventasFacPorModelo = {};
   for (const v of ventasP) {
-    if (v.modelo) ventasPorModelo[v.modelo] = (ventasPorModelo[v.modelo] || 0) + 1;
+    if (v.modelo) {
+      ventasPorModelo[v.modelo]    = (ventasPorModelo[v.modelo]    || 0) + 1;
+      ventasFacPorModelo[v.modelo] = (ventasFacPorModelo[v.modelo] || 0) + (v.precio || 0);
+    }
   }
 
   return { range, cobrado, totalInversores, totalPagoInversores, totalCostoPropio,
            totalComisiones, totalAnuncios, ebitda, quedaLibreTotal,
            burnFijos, categorias, filasVentas, cantidadVentas:ventasP.length,
-           modelosDesc:[...new Set(modelosDesc)], ventasPorModelo };
+           modelosDesc:[...new Set(modelosDesc)], ventasPorModelo, ventasFacPorModelo };
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1019,7 +1120,7 @@ function fmtSigned(n) {
 ═══════════════════════════════════════════════════════════════ */
 function renderDashboard() {
   const data = calcPeriod();
-  const { range, cobrado, totalInversores, totalPagoInversores, totalCostoPropio, ebitda, categorias, filasVentas, cantidadVentas, ventasPorModelo } = data;
+  const { range, cobrado, totalInversores, totalPagoInversores, totalCostoPropio, ebitda, categorias, filasVentas, cantidadVentas, ventasPorModelo, ventasFacPorModelo } = data;
   const com = categorias.find(c=>c.id==='comisiones')?.monto||0;
   const env = categorias.find(c=>c.id==='envios')?.monto||0;
   const imp = categorias.find(c=>c.id==='impuestos')?.monto||0;
@@ -1063,6 +1164,7 @@ function renderDashboard() {
 
   updateConfigSubtitle(categorias);
   renderStockSection(ventasPorModelo, range);
+  renderPresupuesto(ventasPorModelo, ventasFacPorModelo, range);
   if (document.getElementById('configPanel').classList.contains('open')) renderConfigGrid();
   // Actualizar subtitle del model editor si hay modelos nuevos
   const desconocidos = [...new Set(allVentas.map(v=>v.modelo).filter(m => m && !(m in COSTOS_MODELO)))];
@@ -1425,6 +1527,113 @@ function renderStockSection(ventasPorModelo, range) {
   el.innerHTML = html;
   if (sub) sub.textContent = `Stock al ${labelFin}: ${totalActual.toLocaleString()} disponibles de ${totalInicial.toLocaleString()} iniciales`;
 }
+/* ══════════════════════════════════════════════════════
+   PRESUPUESTO 2026 — comparación real vs. plan
+═══════════════════════════════════════════════════════════════ */
+function renderPresupuesto(ventasPorModelo, ventasFacPorModelo, range) {
+  const el = document.getElementById('pptoSection');
+  if (!el) return;
+
+  // 1. Prorratear presupuesto para el período seleccionado
+  const ppto = getPptoPeriodo(range.from, range.to);
+
+  // 2. Acumular valores reales por categoría de presupuesto
+  const realVol = {}, realFac = {};
+  Object.keys(PPTO_2026.volumen).forEach(c => { realVol[c] = 0; realFac[c] = 0; });
+
+  for (const [modelo, qty] of Object.entries(ventasPorModelo)) {
+    const cat = getPptoCat(modelo);
+    if (cat && realVol.hasOwnProperty(cat)) {
+      realVol[cat] += qty;
+      realFac[cat] += ventasFacPorModelo[modelo] || 0;
+    }
+  }
+
+  // 3. Totales
+  const cats = Object.keys(PPTO_2026.volumen);
+  const totPptoVol = cats.reduce((s,c) => s + ppto.vol[c], 0);
+  const totRealVol = cats.reduce((s,c) => s + realVol[c], 0);
+  const totPptoFac = cats.reduce((s,c) => s + ppto.fac[c], 0);
+  const totRealFac = cats.reduce((s,c) => s + realFac[c], 0);
+
+  // 4. Construir tabla
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const [yy,mm,dd] = range.to.split('-');
+  const labelFin = `${parseInt(dd)} ${meses[parseInt(mm)-1]}`;
+
+  const pct = (real, plan) => plan > 0 ? ((real / plan) * 100).toFixed(0) + '%' : '—';
+  const clr = (real, plan) => {
+    if (plan <= 0) return 'var(--muted)';
+    const r = real / plan;
+    return r >= 0.9 ? '#22c55e' : r >= 0.7 ? '#eab308' : '#ef4444';
+  };
+
+  let rows = '';
+  for (const cat of cats) {
+    const pv = ppto.vol[cat], rv = realVol[cat];
+    const pf = ppto.fac[cat], rf = realFac[cat];
+    const diffV = rv - pv, diffF = rf - pf;
+    const pctV = pct(rv, pv), pctF = pct(rf, pf);
+    const clrV = clr(rv, pv), clrF = clr(rf, pf);
+    const diffClrV = diffV >= 0 ? '#22c55e' : '#ef4444';
+    const diffClrF = diffF >= 0 ? '#22c55e' : '#ef4444';
+    if (pv === 0 && rv === 0 && pf === 0 && rf === 0) continue; // omitir filas vacías
+    rows += `
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:7px 10px;color:var(--text);font-size:.82rem">${cat}</td>
+        <td style="padding:7px 10px;text-align:right;color:var(--muted);font-size:.82rem">${pv > 0 ? pv.toFixed(1) : '—'}</td>
+        <td style="padding:7px 10px;text-align:right;font-weight:600;color:var(--text);font-size:.82rem">${rv}</td>
+        <td style="padding:7px 10px;text-align:right;font-weight:600;color:${clrV};font-size:.82rem">${pctV}</td>
+        <td style="padding:7px 10px;text-align:right;color:${diffClrV};font-size:.78rem">${diffV >= 0 ? '+' : ''}${diffV.toFixed(1)}</td>
+        <td style="padding:7px 10px;text-align:right;color:var(--muted);font-size:.82rem">${pf > 0 ? '$' + (pf/1000).toFixed(0) + 'k' : '—'}</td>
+        <td style="padding:7px 10px;text-align:right;font-weight:600;color:var(--text);font-size:.82rem">${rf > 0 ? '$' + (rf/1000).toFixed(0) + 'k' : '$0'}</td>
+        <td style="padding:7px 10px;text-align:right;font-weight:600;color:${clrF};font-size:.82rem">${pctF}</td>
+        <td style="padding:7px 10px;text-align:right;color:${diffF >= 0 ? '#22c55e' : '#ef4444'};font-size:.78rem">${diffF >= 0 ? '+' : ''}$${(diffF/1000).toFixed(0)}k</td>
+      </tr>`;
+  }
+
+  // Fila de totales
+  const totClrV = clr(totRealVol, totPptoVol);
+  const totClrF = clr(totRealFac, totPptoFac);
+  const totDiffV = totRealVol - totPptoVol;
+  const totDiffF = totRealFac - totPptoFac;
+  rows += `
+      <tr style="border-top:2px solid var(--border);background:rgba(255,255,255,.04)">
+        <td style="padding:8px 10px;font-weight:700;color:var(--text)">TOTAL</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--muted);font-weight:600">${totPptoVol.toFixed(1)}</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text)">${totRealVol}</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;color:${totClrV}">${pct(totRealVol,totPptoVol)}</td>
+        <td style="padding:8px 10px;text-align:right;color:${totDiffV>=0?'#22c55e':'#ef4444'};font-weight:600">${totDiffV>=0?'+':''}${totDiffV.toFixed(1)}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--muted);font-weight:600">$${(totPptoFac/1000000).toFixed(2)}M</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text)">$${(totRealFac/1000000).toFixed(2)}M</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;color:${totClrF}">${pct(totRealFac,totPptoFac)}</td>
+        <td style="padding:8px 10px;text-align:right;color:${totDiffF>=0?'#22c55e':'#ef4444'};font-weight:600">${totDiffF>=0?'+':''}$${(totDiffF/1000000).toFixed(2)}M</td>
+      </tr>`;
+
+  el.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);font-size:.72rem;color:var(--muted)">
+        Presupuesto prorrateado al período · stock al ${labelFin} · 🟢 ≥90% 🟡 70–89% 🔴 &lt;70%
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:680px">
+          <thead><tr style="background:rgba(255,255,255,.04)">
+            <th style="text-align:left;padding:8px 10px;color:var(--muted);font-weight:600">Modelo</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">Ppto u.</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">Real u.</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">% Cum.</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">Dif. u.</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">Ppto $</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">Real $</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">% Cum.</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted);font-weight:600">Dif. $</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 function getModelosEnUso() {
   const fromData = [...new Set(allVentas.map(v => v.modelo).filter(Boolean))];
   const base = fromData.length === 0 ? Object.keys(DEFAULT_COSTOS_MODELO) : fromData;
@@ -1538,14 +1747,15 @@ function showToast(msg) {
 }
 
 // Actualiza en memoria mientras se escribe (sin guardar aún)
-// Autosave debounce para costos
-let _costosSaveTimer = null;
+// Render debounce para costos (evita re-renders innecesarios al tipear)
+let _costosRenderTimer = null;
 
-// Actualiza en memoria mientras se escribe y guarda automáticamente tras 800ms de pausa
+// Guarda en localStorage de inmediato; actualiza el dashboard tras 600ms de pausa
 function stageCosto(nombre, val) {
   COSTOS_MODELO[nombre] = parseFloat(val) || 0;
-  clearTimeout(_costosSaveTimer);
-  _costosSaveTimer = setTimeout(saveCostos, 800);
+  saveCostos();  // Persistir en localStorage de inmediato (no perder cambios al cerrar)
+  clearTimeout(_costosRenderTimer);
+  _costosRenderTimer = setTimeout(() => { if (allVentas.length || allEgresos.length) renderDashboard(); }, 600);
 }
 
 // Actualiza el tipo de un modelo y guarda
@@ -1616,7 +1826,8 @@ function confirmAddModelo() {
 function saveAllCostos() {
   saveCostos();
   saveTipos();
-  showToast('✅ Costos guardados');
+  if (allVentas.length || allEgresos.length) renderDashboard();
+  showToast('✅ Costos guardados — dashboard actualizado');
 }
 
 function onModelCost(nombre, val) {
