@@ -372,7 +372,7 @@
       <div class="quick-btns">
         <button class="qbtn" onclick="selectPeriodo(this,'hoy')">Hoy</button>
         <button class="qbtn active" onclick="selectPeriodo(this,'semana')">Esta semana</button>
-        <button class="qbtn" onclick="selectPeriodo(this,'mes')">Este mes</button>
+        <button class="qbtn" onclick="selectPeriodo(this,"mes')">Este mes</button>
         <button class="qbtn" onclick="selectPeriodo(this,'mes-hoy')">Mes hasta hoy</button>
       </div>
       <span class="sep">|</span>
@@ -564,15 +564,15 @@ const REFRESH_MS       = 5 * 60 * 1000;
 // Costos base por modelo (editables desde la UI, se guardan en localStorage)
 // Modelos exactos de la hoja de Ventas del Excel
 const DEFAULT_COSTOS_MODELO = {
-  '13 Huerta Acr 12P':      126829,
-  '14 Huerta Acr 24P':      149441,
-  '14 Huerta Acr 32P':      172053,
-  '16 Huerta Acr Led 28P':  240686,
-  '17 Upsell 12P':               0,
+  '13 Huerta Acr 12P':     148186,   // 12P base
+  '14 Huerta Acr 24P':      174604,   // 12P + 1 upsell (148186 + 26418)
+  '14 Huerta Acr 32P':      201022,   // 12P + 2 upsells (148186 + 2*26418)
+  '16 Huerta Acr Led 28P':  281220,   // 28P LED
+  '17 Upsell 12P':           26418,   // módulo upsell suelto
   '32 Mini Baige':           30787,
   '32 Mini Gris':            30787,
   '33 Torre 1.0':           247342,
-  '31 NFT 288':                  0,
+  '31 NFT 288':                   0,
 };
 
 // 'inversores' = plata que se devuelve semana a semana a los inversores (huertas 12P, 24P, 32P, upsell)
@@ -621,10 +621,10 @@ const PPTO_2026 = {
     'Huerta Emprendedores Brasil':  {1:2,2:6,4:5,5:8,6:8,7:10,8:10,9:12,10:15,11:15,12:10},
   },
   facturacion: {
-    'Mini Huerta Nacional':        {1:2553600,2:4620800,3:6080000,4:1824000},
+    'Mini Huerta Nacional':        {1:2553600,24620800,306080000,4:1824000},
     'Mini Huerta China':           {4:8756000,5:18606500,6:26268000,7:32835000,8:35024000,9:39402000,10:38307500,11:43780000,12:37213000},
     'Huerta PVC':                  {1:18447000,2:10406000},
-    'Huerta Nacional':             {1:937600,2:4688000,3:7032000,4:2344000,5:2344000,6:2344000},
+     'Huerta Nacional':             {1:937600,2:4688000,3:7032000,4:2344000,5:2344000,6:2344000},
     'Huerta China 12P':            {2:11513700,3:27912000,4:27912000,5:31401000,6:33145500,7:27912000,8:31401000,9:31401000,10:34890000,11:45357000,12:41868000},
     'Huerta China Luces 28P':      {2:5489000,3:8233500,4:8233500,5:8233500,6:2744500},
     'Upsell China 3 Módulos':      {2:395600,3:989000,4:1978000,5:2472500,6:3461500,7:3461500,8:3956000,9:5934000,10:7912000,11:8901000,12:6923000},
@@ -633,16 +633,17 @@ const PPTO_2026 = {
 };
 
 // Mapeo explícito de modelos de venta → categoría de presupuesto
+// 24P y 32P aportan 1 huerta a 'Huerta China 12P' + upsells implícitos (ver renderPresupuesto)
 const PPTO_MODEL_MAP = {
   '13 Huerta Acr 12P':     'Huerta China 12P',
-  '14 Huerta Acr 24P':     'Huerta Nacional',
-  '14 Huerta Acr 32P':     'Huerta Emprendedores Brasil',
+  '14 Huerta Acr 24P':     'Huerta China 12P',         // 12P + 1 upsell
+  '14 Huerta Acr 32P':     'Huerta China 12P',         // 12P + 2 upsells
   '16 Huerta Acr Led 28P': 'Huerta China Luces 28P',
   '17 Upsell 12P':         'Upsell China 3 Módulos',
   '32 Mini Baige':         'Mini Huerta Nacional',
   '32 Mini Gris':          'Mini Huerta Nacional',
-  '33 Torre 1.0':          null,   // producto nuevo, sin presupuesto 2026
-  '31 NFT 288':            'Huerta PVC',
+  '33 Torre 1.0':          'Huerta Nacional',           // Torre 1.0 = Huerta Nacional en ppto
+  '31 NFT 288':            'Huerta Emprendedores Brasil',
 };
 
 // Fallback fuzzy para modelos custom no listados en PPTO_MODEL_MAP
@@ -654,10 +655,10 @@ function getPptoCat(modelo) {
   if (m.includes('mini'))   return 'Mini Huerta Nacional';
   if (m.includes('led') || /28\s*p/.test(m)) return 'Huerta China Luces 28P';
   if (m.includes('upsell')) return 'Upsell China 3 Módulos';
-  if (m.includes('brasil') || m.includes('emprendedor') || /32\s*p/.test(m)) return 'Huerta Emprendedores Brasil';
-  if (/24\s*p/.test(m))     return 'Huerta Nacional';
-  if (m.includes('pvc') || m.includes('nft')) return 'Huerta PVC';
-  if (/12\s*p/.test(m))     return 'Huerta China 12P';
+  if (m.includes('brasil') || m.includes('emprendedor') || m.includes('nft')) return 'Huerta Emprendedores Brasil';
+  if (m.includes('torre') || m.includes('nacional')) return 'Huerta Nacional';
+  // 12P, 24P, 32P → Huerta China 12P (todas las huertas acr aportan 1 huerta)
+  if (/12\s*p/.test(m) || /24\s*p/.test(m) || /32\s*p/.test(m)) return 'Huerta China 12P';
   return null;
 }
 
@@ -670,7 +671,7 @@ function getPptoPeriodo(from, to) {
   cats.forEach(c => { vol[c] = 0; fac[c] = 0; });
 
   // Iterar cada mes que se superpone con el período
-  const ym1 = d1.getFullYear() *12 + d1.getMonth();
+  const ym1 = d1.getFullYear() * 12 + d1.getMonth();
   const ym2 = d2.getFullYear() * 12 + d2.getMonth();
   for (let ym = ym1; ym <= ym2; ym++) {
     const yr = Math.floor(ym / 12), mo = ym % 12; // mo = 0-indexed
@@ -692,8 +693,6 @@ function getPptoPeriodo(from, to) {
   return { vol, fac };
 }
 
-
-
 // Fecha de referencia para el stock inicial (1 de Abril 2026)
 const STOCK_FECHA_INICIO = '2026-04-01';
 
@@ -703,7 +702,7 @@ const COMPONENTES_STOCK = [
   { id: 'mini_china', label: 'Mini China',    emoji: '🌱', inicial: 2600, nota: 'No a la venta aún', noVenta: true },
   { id: '12p',        label: '12 Plantas',    emoji: '🌿', inicial: 915  },
   { id: '28p',        label: '28P LED',       emoji: '💡', inicial: 61   },
-  { id: 'upsell',     label: 'Upsell',        emoji: '⬆',    inicial: 420  },
+  { id: 'upsell',     label: 'Upsell',        emoji: '⬆', inicial: 420  },
   { id: 'torre',      label: 'Torre 1.0',     emoji: '🏡', inicial: 41   },
 ];
 
@@ -794,7 +793,7 @@ function saveConfig(cfg) {
   localStorage.setItem('acrule_config', JSON.stringify(cfg));
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════════ */
 let tokenClient  = null;
@@ -1138,7 +1137,7 @@ function renderDashboard() {
   _setCard('metInversores',  fmt(totalPagoInversores), `${cobrado>0?(totalPagoInversores/cobrado*100).toFixed(1):0}% de la facturación`);
   _setCard('metCostoPropio', fmt(totalCostoPropio),    `${cobrado>0?(totalCostoPropio/cobrado*100).toFixed(1):0}% de la facturación`);
   const quedaClass = quedaLibre>=0?'positive':'negative';
-  _setCard('metQueda', fmtSigned(quedaLibre), `Margen bruto ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
+  _setCard('metQueda', fmtSigned(quedaLibre), `Tras inv.+propio+com+envíos · ${cobrado>0?(quedaLibre/cobrado*100).toFixed(1):0}%`, quedaClass);
   _setCard('metAds', fmt(data.totalAnuncios), data.totalAnuncios > cobrado*0.088 ? '⚠ Sobre presupuesto':'Dentro del presupuesto',
            data.totalAnuncios > cobrado*0.088 ? 'negative':'');
 
@@ -1500,6 +1499,7 @@ function renderStockSection(ventasPorModelo, range) {
   const modelosConVentas = Object.entries(ventasPorModelo)
     .filter(([, q]) => q > 0)
     .sort((a, b) => b[1] - a[1]);
+
   if (modelosConVentas.length > 0) {
     html += `<div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
       <table style="width:100%;border-collapse:collapse;font-size:.8rem">
@@ -1511,7 +1511,7 @@ function renderStockSection(ventasPorModelo, range) {
     for (const [modelo, qty] of modelosConVentas) {
       const comp = getComponentesConsumo(modelo);
       const compParts = Object.entries(comp).map(([c, n]) => {
-        const info = COMPOLNETES_STOCK.find(x => x.id === c);
+        const info = COMPONENTES_STOCK.find(x => x.id === c);
         return `${info ? info.emoji : ''} ${n > 1 ? n+'× ' : ''}${info ? info.label : c}`;
       });
       const compStr = compParts.length > 0 ? compParts.join(' + ') : '—';
@@ -1527,7 +1527,8 @@ function renderStockSection(ventasPorModelo, range) {
   el.innerHTML = html;
   if (sub) sub.textContent = `Stock al ${labelFin}: ${totalActual.toLocaleString()} disponibles de ${totalInicial.toLocaleString()} iniciales`;
 }
-/* ══════════════════════════════════════════════════════
+
+/* ═══════════════════════════════════════════════════════════════
    PRESUPUESTO 2026 — comparación real vs. plan
 ═══════════════════════════════════════════════════════════════ */
 function renderPresupuesto(ventasPorModelo, ventasFacPorModelo, range) {
@@ -1549,8 +1550,15 @@ function renderPresupuesto(ventasPorModelo, ventasFacPorModelo, range) {
     }
   }
 
-  // 3. Totales
-  const cats = Object.keys(PPTO_2026.volumen);
+  // Upsells implícitos: 24P lleva 1 upsell, 32P lleva 2 upsells
+  // (el volumen se suma a la categoría Upsell; la fac viene solo de upsells sueltos para no duplicar)
+  const cnt24 = ventasPorModelo['14 Huerta Acr 24P'] || 0;
+  const cnt32 = ventasPorModelo['14 Huerta Acr 32P'] || 0;
+  realVol['Upsell China 3 Módulos'] = (realVol['Upsell China 3 Módulos'] || 0) + cnt24 * 1 + cnt32 * 2;
+
+  // 3. Totales — excluir Huerta PVC (ya no se vende, no tiene mapeo)
+  const CATSEOCULTAS = new Set(['Huerta PVC']);
+  const cats = Object.keys(PPTO_2026.volumen).filter(c => !CATS_OCULTAS.has(c));
   const totPptoVol = cats.reduce((s,c) => s + ppto.vol[c], 0);
   const totRealVol = cats.reduce((s,c) => s + realVol[c], 0);
   const totPptoFac = cats.reduce((s,c) => s + ppto.fac[c], 0);
@@ -1746,7 +1754,6 @@ function showToast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2400);
 }
 
-// Actualiza en memoria mientras se escribe (sin guardar aún)
 // Render debounce para costos (evita re-renders innecesarios al tipear)
 let _costosRenderTimer = null;
 
@@ -1921,11 +1928,11 @@ window.addEventListener('load', () => {
   initAuth();
 });
 
-  // Guardar costos y tipos antes de cerrar la pestaña
-  window.addEventListener('beforeunload', () => {
-    saveCostos();
-    saveTipos();
-  });
+// Guardar costos y tipos antes de cerrar la pestaña
+window.addEventListener('beforeunload', () => {
+  saveCostos();
+  saveTipos();
+});
 </script>
 </body>
 </html>
