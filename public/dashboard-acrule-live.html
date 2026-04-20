@@ -564,28 +564,12 @@ const REFRESH_MS       = 5 * 60 * 1000;
 // Costos base por modelo (editables desde la UI, se guardan en localStorage)
 // Modelos exactos de la hoja de Ventas del Excel
 const DEFAULT_COSTOS_MODELO = {
-  '13 Huerta Acr 12P':     148186,   // 12P base
+  '13 Huerta Acr 12P':      148186,   // 12P base
   '14 Huerta Acr 24P':      174604,   // 12P + 1 upsell (148186 + 26418)
   '14 Huerta Acr 32P':      201022,   // 12P + 2 upsells (148186 + 2*26418)
   '16 Huerta Acr Led 28P':  281220,   // 28P LED
   '17 Upsell 12P':           26418,   // módulo upsell suelto
-  '32 Mini  Baige':           30787,
-  '32 Mini Gris':            30787,
-  '33 Torre 1.0':           247342,
-  '31 NFT 288':                  0,
-};
-
-// 'inversores' = plata que se devuelve semana a semana a los inversores (huertas 12P, 24P, 32P, upsell)
-// 'propio'     = plata que se guarda para reponer stock/insumos (minis, Torre 1.0, NFT)
-const DEFAULT_TIPOS_MODELO = {
-  '13 Huerta Acr 12P':     'inversores',
-  '14 Huerta Acr 24P':     'inversores',
-  '14 Huerta Acr 32P':     'inversores',
-  '16 Huerta Acr Led 28P': 'inversores',
-  '17 Upsell 12P':         'inversores',
-  '32 Mini Baige':         'propio',
-  '32 Mini Gris':          'propio',
-  '33 Torre 1.0':          'propio',
+  '32 Minio',
   '31 NFT 288':            'propio',
 };
 
@@ -621,10 +605,10 @@ const PPTO_2026 = {
     'Huerta Emprendedores Brasil':  {1:2,2:6,4:5,5:8,6:8,7:10,8:10,9:12,10:15,11:15,12:10},
   },
   facturacion: {
-    'Mini Huerta Nacional':        {1:2553600,204620800,3:6080000,4:1824000},
+    'Mini Huerta Nacional':        {1:2553600,224620800,3:6080000,4:1824000},
     'Mini Huerta China':           {4:8756000,5:18606500,6:26268000,7:32835000,8:35024000,9:39402000,10:38307500,11:43780000,12:37213000},
     'Huerta PVC':                  {1:18447000,2:10406000},
-    'Huerta Nacional':             {1:937600,204688000,3:7032000,4:2344000,5:2344000,6:2344000},
+    'Huerta Nacional':             {1:937600,2:4688000,3:7032000,4:2344000,5:2344000,6:2344000},
     'Huerta China 12P':            {2:11513700,3:27912000,4:27912000,5:31401000,6:33145500,7:27912000,8:31401000,9:31401000,10:34890000,11:45357000,12:41868000},
     'Huerta China Luces 28P':      {2:5489000,3:8233500,4:8233500,5:8233500,6:2744500},
     'Upsell China 3 Módulos':      {2:395600,3:989000,4:1978000,5:2472500,6:3461500,7:3461500,8:3956000,9:5934000,10:7912000,11:8901000,12:6923000},
@@ -711,6 +695,25 @@ function getComponentesConsumo(modelo) {
   const m = (modelo || '').toLowerCase().replace(/\s+/g, '');
   if (m.includes('mini'))             return { mini_nac: 1 };    // mini gris y beige → stock nacional
   if (m.includes('torre') || m.includes('1.0')) return { torre: 1 };
+  if (m.includes('32'))               return { '12p': 1, upsell: 2 };
+  if (m.includes('24'))               return { '12p': 1, upsell: 1 };
+  if (m.includes 'upsell'))           return { upsell: 1 };
+  if (m.includes('28'))               return { '28p': 1 };
+  if (m.includes('12'))               return { '12p': 1 };
+  return {};
+}
+
+function loadTipos() {
+  try {
+    const raw = localStorage.getItem('acrule_tipos');
+    const saved = raw ? JSON.parse(raw) : {};
+    return { ...DEFAULT_TIPOS_MODELO, ...saved };
+  } catch { return { ...DEFAULT_TIPOS_MODELO }; }
+}
+function saveTipos() {
+  localStorage.setItem('acrule_tipos', JSON.stringify(TIPOS_MODELO));
+}
+let TI: 1 };
   if (m.includes('32'))               return { '12p': 1, upsell: 2 };
   if (m.includes('24'))               return { '12p': 1, upsell: 1 };
   if (m.includes('upsell'))           return { upsell: 1 };
@@ -1187,23 +1190,7 @@ function renderDashboard() {
   renderPresupuesto(ventasPorModelo, ventasFacPorModelo, range);
   if (document.getElementById('configPanel').classList.contains('open')) renderConfigGrid();
   // Actualizar subtitle del model editor si hay modelos nuevos
-  const desconocidos = [...new Set(allVentas.map(v=>v.modelo).filter(m => m && !(m in COSTOS_MODELO)))];
-  const mSub = document.getElementById('modelSubtitle');
-  if (mSub && !modelEditorOpen) {
-    mSub.textContent = desconocidos.length > 0
-      ? `⚠ ${desconocidos.length} modelo${desconocidos.length>1?'s':''} sin costo — hacé clic para configurar`
-      : 'Costos de modelos configurados ✅';
-  }
-}
-
-function _setCard(id, value, sub, subClass) {
-  const el = document.getElementById(id); if(!el) return;
-  el.querySelector('.metric-value').textContent = value;
-  const s = el.querySelector('.metric-sub');
-  if (s) { s.textContent = sub; s.className = `metric-sub ${subClass||''}`; }
-}
-
-function renderAlertas(categorias) {
+  const desconocidos = [...new Set(aderAlertas(categorias) {
   const section = document.getElementById('alertsSection'); if(!section) return;
   const alerts = [];
   for (const cat of categorias) {
@@ -1310,6 +1297,19 @@ function renderBudgetTable(categorias, cobrado) {
 
 function renderTablaVentas(filasVentas, cantidadVentas) {
   const badge = document.getElementById('ventasBadge');
+  if (badge) badge.textContent = `${cantidadVentas} venta${cantidadVentas!==1?'s':''}`;
+  const tbody = document.getElementById('ventasTbody'); if(!tbody) return;
+  const rows = filasVentas.slice(-25).reverse();
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No hay ventas registradas en este período.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(v => {
+    const parts = (v.fecha||'').split('-');
+    const fechaFmt = parts.length===3 ? `${parts[2]}/${parts[1]}` : v.fecha||'—';
+    const costoNull = getCostoModelo(v.modelo)===null;
+    const tag = costoNull
+    Id('ventasBadge');
   if (badge) badge.textContent = `${cantidadVentas} venta${cantidadVentas!==1?'s':''}`;
   const tbody = document.getElementById('ventasTbody'); if(!tbody) return;
   const rows = filasVentas.slice(-25).reverse();
