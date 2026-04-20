@@ -372,7 +372,7 @@
       <div class="quick-btns">
         <button class="qbtn" onclick="selectPeriodo(this,'hoy')">Hoy</button>
         <button class="qbtn active" onclick="selectPeriodo(this,'semana')">Esta semana</button>
-        <button class="qbtn" onclick="selectPeriodo(this,"mes')">Este mes</button>
+        <button class="qbtn" onclick="selectPeriodo(this,'mes')">Este mes</button>
         <button class="qbtn" onclick="selectPeriodo(this,'mes-hoy')">Mes hasta hoy</button>
       </div>
       <span class="sep">|</span>
@@ -569,10 +569,10 @@ const DEFAULT_COSTOS_MODELO = {
   '14 Huerta Acr 32P':      201022,   // 12P + 2 upsells (148186 + 2*26418)
   '16 Huerta Acr Led 28P':  281220,   // 28P LED
   '17 Upsell 12P':           26418,   // módulo upsell suelto
-  '32 Mini Baige':           30787,
+  '32 Mini  Baige':           30787,
   '32 Mini Gris':            30787,
   '33 Torre 1.0':           247342,
-  '31 NFT 288':                   0,
+  '31 NFT 288':                  0,
 };
 
 // 'inversores' = plata que se devuelve semana a semana a los inversores (huertas 12P, 24P, 32P, upsell)
@@ -621,10 +621,10 @@ const PPTO_2026 = {
     'Huerta Emprendedores Brasil':  {1:2,2:6,4:5,5:8,6:8,7:10,8:10,9:12,10:15,11:15,12:10},
   },
   facturacion: {
-    'Mini Huerta Nacional':        {1:2553600,24620800,306080000,4:1824000},
+    'Mini Huerta Nacional':        {1:2553600,204620800,3:6080000,4:1824000},
     'Mini Huerta China':           {4:8756000,5:18606500,6:26268000,7:32835000,8:35024000,9:39402000,10:38307500,11:43780000,12:37213000},
     'Huerta PVC':                  {1:18447000,2:10406000},
-     'Huerta Nacional':             {1:937600,2:4688000,3:7032000,4:2344000,5:2344000,6:2344000},
+    'Huerta Nacional':             {1:937600,204688000,3:7032000,4:2344000,5:2344000,6:2344000},
     'Huerta China 12P':            {2:11513700,3:27912000,4:27912000,5:31401000,6:33145500,7:27912000,8:31401000,9:31401000,10:34890000,11:45357000,12:41868000},
     'Huerta China Luces 28P':      {2:5489000,3:8233500,4:8233500,5:8233500,6:2744500},
     'Upsell China 3 Módulos':      {2:395600,3:989000,4:1978000,5:2472500,6:3461500,7:3461500,8:3956000,9:5934000,10:7912000,11:8901000,12:6923000},
@@ -793,7 +793,7 @@ function saveConfig(cfg) {
   localStorage.setItem('acrule_config', JSON.stringify(cfg));
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════════ */
 let tokenClient  = null;
@@ -978,9 +978,14 @@ async function fetchSheet(sheetName) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}`;
   const res = await fetch(url, { headers:{ Authorization:`Bearer ${accessToken}` } });
   if (!res.ok) {
-    const err = await res.json().catch(()=>({}));
+    if (res.status === 401 || res.status === 403) throw new Error('AUTH_EXPIRED');
+    const ct = res.headers.get('content-type') || '';
+    const err = ct.includes('json') ? await res.json().catch(()=>({})) : {};
     throw new Error(err.error?.message || `Error ${res.status} al leer "${sheetName}"`);
   }
+  // Guard: si la respuesta es HTML (token expirado y Google redirigió) lanzar auth error
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('json')) throw new Error('AUTH_EXPIRED');
   const data = await res.json();
   return data.values || [];
 }
@@ -1000,8 +1005,24 @@ async function fetchAll(silent=false) {
     renderDashboard();
   } catch(err) {
     showLoading(false);
-    showError(err.message);
-    if (allVentas.length > 0) renderDashboard(); // render with cached data
+    if (err.message === 'AUTH_EXPIRED') {
+      // Token expirado — limpiar estado y mostrar botón de renovar sesión
+      accessToken = null;
+      if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+      showError('Sesión expirada');
+      const el = document.getElementById('errorBanner');
+      if (el && !el.querySelector('.renew-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm renew-btn';
+        btn.style.cssText = 'margin-left:12px;padding:3px 12px;font-size:.8rem;';
+        btn.textContent = '🔑 Renovar sesión';
+        btn.onclick = () => { el.style.display = 'none'; login(); };
+        el.appendChild(btn);
+      }
+    } else {
+      showError(err.message);
+    }
+    if (allVentas.length > 0) renderDashboard(); // render con datos cacheados
   }
 }
 
@@ -1557,7 +1578,7 @@ function renderPresupuesto(ventasPorModelo, ventasFacPorModelo, range) {
   realVol['Upsell China 3 Módulos'] = (realVol['Upsell China 3 Módulos'] || 0) + cnt24 * 1 + cnt32 * 2;
 
   // 3. Totales — excluir Huerta PVC (ya no se vende, no tiene mapeo)
-  const CATSEOCULTAS = new Set(['Huerta PVC']);
+  const CATS_OCULTAS = new Set(['Huerta PVC']);
   const cats = Object.keys(PPTO_2026.volumen).filter(c => !CATS_OCULTAS.has(c));
   const totPptoVol = cats.reduce((s,c) => s + ppto.vol[c], 0);
   const totRealVol = cats.reduce((s,c) => s + realVol[c], 0);
@@ -1716,7 +1737,7 @@ function renderModelGrid() {
       <select id="newModelTipo">
         <option value="inversores">🌿 Inversores</option>
         <option value="propio">📦 Propio</option>
-      </select>
+  #   </select>
       <button class="btn" onclick="confirmAddModelo()" style="background:var(--blue);border-color:var(--blue);color:#fff;padding:6px 14px;font-size:.8rem">Agregar</button>
     </div>`;
 
